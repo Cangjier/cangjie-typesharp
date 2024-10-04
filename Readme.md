@@ -1,10 +1,9 @@
-﻿# 1、开发计划
+﻿# TypeSharp
 
-- try-catch 已完成
-- throw  已完成
-- ?: 已完成
-- ?? 已完成
-- 简单await/async 已完成
-- 将callinterface变成Type，将callinstance变成delegate 已完成
-- 支持async lamda 已完成
+在C#运行时中解析执行TypeScript
 
+# 路线图
+
+## 2024
+
+目标：支持typescript标准语法，但是不包括包管理、class、interface等代码组织。
