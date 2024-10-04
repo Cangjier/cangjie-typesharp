@@ -3,7 +3,6 @@ using Cangjie.Imp.Text;
 using Cangjie.Imp.Text.Units;
 using Cangjie.Imp.Text.Units.Json;
 using Cangjie.Imp.Text.Units.String;
-using OwnerInterface;
 
 namespace Cangjie.TypeSharp.CSharpTypeFullNameEngine;
 public class FullNameScriptEngine

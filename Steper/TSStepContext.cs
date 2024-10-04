@@ -1,8 +1,7 @@
 ﻿using Cangjie.Core.Steper;
-using OwnerInterface;
-using TidyHPC.LiteJson;
 using Cangjie.TypeSharp.BasicType;
 using Cangjie.TypeSharp.System;
+using TidyHPC.LiteJson;
 
 namespace Cangjie.TypeSharp.Steper;
 public class TSStepContext : StepContext<char>

@@ -1,6 +1,4 @@
 ﻿using Cangjie.Core.Runtime;
-using Cangjie.Core.Syntax;
-using OwnerInterface;
 using TidyHPC.LiteJson;
 
 namespace Cangjie.TypeSharp;
