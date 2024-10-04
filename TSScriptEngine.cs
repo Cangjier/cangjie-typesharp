@@ -5,9 +5,9 @@ using Cangjie.Imp.Text;
 using Cangjie.Imp.Text.Units.String;
 using OwnerInterface;
 using TidyHPC.LiteJson;
-using TypeSharp.Steper;
+using Cangjie.TypeSharp.Steper;
 
-namespace TypeSharp;
+namespace Cangjie.TypeSharp;
 public class TSScriptEngine
 {
     static TSScriptEngine()

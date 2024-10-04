@@ -5,7 +5,7 @@ using Cangjie.Imp.Text.Units.Json;
 using Cangjie.Imp.Text.Units.String;
 using OwnerInterface;
 
-namespace TypeSharp.CSharpTypeFullNameEngine;
+namespace Cangjie.TypeSharp.CSharpTypeFullNameEngine;
 public class FullNameScriptEngine
 {
     static FullNameScriptEngine()

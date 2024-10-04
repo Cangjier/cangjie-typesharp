@@ -1,8 +1,8 @@
 ﻿using System.Reflection;
 using System.Text.RegularExpressions;
-using TypeSharp.FullNameScript;
+using Cangjie.TypeSharp.FullNameScript;
 
-namespace TypeSharp.System;
+namespace Cangjie.TypeSharp.System;
 #pragma warning disable CS8981 // 该类型名称仅包含小写 ascii 字符。此类名称可能会成为该语言的保留值。
 public static class reflection
 #pragma warning restore CS8981 // 该类型名称仅包含小写 ascii 字符。此类名称可能会成为该语言的保留值。

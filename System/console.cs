@@ -2,7 +2,7 @@
 using TidyHPC.LiteJson;
 using TidyHPC.Loggers;
 
-namespace TypeSharp.System;
+namespace Cangjie.TypeSharp.System;
 /// <summary>
 /// 控制台
 /// </summary>

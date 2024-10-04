@@ -1,6 +1,6 @@
 ﻿using TidyHPC.LiteJson;
 
-namespace TypeSharp.System;
+namespace Cangjie.TypeSharp.System;
 public class Object
 {
     public static string[] keys(object value)

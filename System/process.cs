@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace TypeSharp.System;
+namespace Cangjie.TypeSharp.System;
 public class process
 {
     /// <summary>

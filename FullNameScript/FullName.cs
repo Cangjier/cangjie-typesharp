@@ -4,9 +4,9 @@ using Cangjie.Core.Syntax;
 using Cangjie.Imp.Text.Units;
 using System.Text.RegularExpressions;
 using TidyHPC.Extensions;
-using TypeSharp.CSharpTypeFullNameEngine;
+using Cangjie.TypeSharp.CSharpTypeFullNameEngine;
 
-namespace TypeSharp.FullNameScript;
+namespace Cangjie.TypeSharp.FullNameScript;
 public class FullName
 {
     public string NameSpace { get; set; } = string.Empty;

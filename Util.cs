@@ -2,7 +2,7 @@
 using System.Text;
 using TidyHPC.LiteJson;
 
-namespace TypeSharp;
+namespace Cangjie.TypeSharp;
 public class Util
 {
     public static Encoding UTF8 { get; } = new UTF8Encoding(false);

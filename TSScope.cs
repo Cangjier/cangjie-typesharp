@@ -1,6 +1,6 @@
 ﻿using Cangjie.Core.Runtime;
 
-namespace TypeSharp;
+namespace Cangjie.TypeSharp;
 
 public enum ScopeType
 {

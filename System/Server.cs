@@ -3,7 +3,7 @@ using TidyHPC.LiteHttpServer;
 using TidyHPC.Routers.Urls;
 using TidyHPC.Routers.Urls.Responses;
 
-namespace TypeSharp.System;
+namespace Cangjie.TypeSharp.System;
 
 /// <summary>
 /// 内置服务器

@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using TidyHPC.Extensions;
 using TidyHPC.LiteJson;
 
-namespace TypeSharp.BasicType;
+namespace Cangjie.TypeSharp.BasicType;
 public struct JsonWrapper
 {
     public JsonWrapper(object value)

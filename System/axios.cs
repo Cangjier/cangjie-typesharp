@@ -2,7 +2,7 @@
 using TidyHPC.Extensions;
 using TidyHPC.LiteJson;
 
-namespace TypeSharp.System;
+namespace Cangjie.TypeSharp.System;
 
 /// <summary>
 /// 模拟axios

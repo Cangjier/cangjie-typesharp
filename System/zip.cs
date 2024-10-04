@@ -1,6 +1,6 @@
 ﻿using System.IO.Compression;
 
-namespace TypeSharp.System;
+namespace Cangjie.TypeSharp.System;
 
 /// <summary>
 /// zip压缩

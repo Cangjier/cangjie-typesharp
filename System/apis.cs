@@ -1,6 +1,6 @@
 ﻿using TidyHPC.LiteJson;
 
-namespace TypeSharp.System;
+namespace Cangjie.TypeSharp.System;
 public class apis
 {
     private static string? findDirectory(string? rootDirectory, string name)

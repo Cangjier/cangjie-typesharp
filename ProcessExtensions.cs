@@ -2,7 +2,7 @@
 using System.Management;
 using System.Runtime.InteropServices;
 
-namespace TypeSharp;
+namespace Cangjie.TypeSharp;
 
 /// <summary>
 /// Process extensions

@@ -3,7 +3,7 @@ using Cangjie.Core.Syntax;
 using OwnerInterface;
 using TidyHPC.LiteJson;
 
-namespace TypeSharp;
+namespace Cangjie.TypeSharp;
 
 public class TSRuntimeContext : RuntimeContext<char>
 {

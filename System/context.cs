@@ -5,7 +5,7 @@ using TidyHPC.Extensions;
 using TidyHPC.LiteJson;
 using TidyHPC.Loggers;
 
-namespace TypeSharp.System;
+namespace Cangjie.TypeSharp.System;
 
 /// <summary>
 /// 上下文

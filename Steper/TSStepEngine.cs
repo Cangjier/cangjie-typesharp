@@ -5,7 +5,7 @@ using Cangjie.Imp.Steper.JsonSteps;
 using Cangjie.Imp.Steper.StringStep;
 using Cangjie.Imp.Steper.ValueSteps;
 
-namespace TypeSharp.Steper;
+namespace Cangjie.TypeSharp.Steper;
 
 public class TSStepEngine : StepParserEngine<char>
 {

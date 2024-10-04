@@ -1,10 +1,10 @@
 ﻿using Cangjie.Core.Steper;
 using OwnerInterface;
 using TidyHPC.LiteJson;
-using TypeSharp.BasicType;
-using TypeSharp.System;
+using Cangjie.TypeSharp.BasicType;
+using Cangjie.TypeSharp.System;
 
-namespace TypeSharp.Steper;
+namespace Cangjie.TypeSharp.Steper;
 public class TSStepContext : StepContext<char>
 {
     public TSStepContext(IOwner owner) : base(owner)

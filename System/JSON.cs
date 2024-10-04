@@ -1,6 +1,6 @@
 ﻿using TidyHPC.LiteJson;
 
-namespace TypeSharp.System;
+namespace Cangjie.TypeSharp.System;
 public class JSON
 {
     public static string stringify(object? value)
