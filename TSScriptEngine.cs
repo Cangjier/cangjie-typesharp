@@ -1,10 +1,11 @@
 ﻿using Cangjie.Core.Extensions;
 using Cangjie.Core.Runtime;
 using Cangjie.Core.Syntax.Templates;
-using Cangjie.Imp.Text;
-using Cangjie.Imp.Text.Units.String;
-using Cangjie.TypeSharp.Steper;
+using Cangjie.Owners;
+using Cangjie.Dawn.Text;
+using Cangjie.Dawn.Text.Units.String;
 using TidyHPC.LiteJson;
+using Cangjie.TypeSharp.Steper;
 
 namespace Cangjie.TypeSharp;
 public class TSScriptEngine
@@ -191,12 +192,20 @@ public class TSScriptEngine
         TextDocument document = new(owner, script);
         TextContext textContext = new(owner, Template);
         textContext.Process(document);
+#if DEBUG
         var root = textContext.Root.ToString();
+        Console.WriteLine(Path.GetFullPath("root.xml"));
+        File.WriteAllText("root.xml",root);
+#endif
+
         TSStepContext stepContext = new(owner);
         onStepContext?.Invoke(stepContext);
         var parseResult = StepEngine.Parse(owner, stepContext, textContext.Root.Data, false);
         var steps = parseResult.Steps;
-
+#if DEBUG
+        Console.WriteLine(Path.GetFullPath("steps.text"));
+        File.WriteAllText($"steps.text", steps.ToString());
+#endif
         TSRuntimeContext runtimeContext = new(owner);
         onRuntimeContext?.Invoke(runtimeContext);
         steps.Run(runtimeContext);
@@ -211,12 +220,19 @@ public class TSScriptEngine
         TextDocument document = new(owner, script);
         TextContext textContext = new(owner, Template);
         textContext.Process(document);
+#if DEBUG
         var root = textContext.Root.ToString();
+        Console.WriteLine(Path.GetFullPath("root.xml"));
+        File.WriteAllText("root.xml", root);
+#endif
         TSStepContext stepContext = new(owner);
         onStepContext?.Invoke(stepContext);
         var parseResult = StepEngine.Parse(owner, stepContext, textContext.Root.Data, false);
         var steps = parseResult.Steps;
-
+#if DEBUG
+        Console.WriteLine(Path.GetFullPath("steps.text"));
+        File.WriteAllText($"steps.text", steps.ToString());
+#endif
         TSRuntimeContext runtimeContext = new(owner);
         onRuntimeContext?.Invoke(runtimeContext);
         await steps.RunAsync(runtimeContext);

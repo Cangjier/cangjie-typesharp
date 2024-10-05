@@ -1,8 +1,9 @@
 ﻿using Cangjie.Core.Syntax.Templates;
-using Cangjie.Imp.Text;
-using Cangjie.Imp.Text.Units;
-using Cangjie.Imp.Text.Units.Json;
-using Cangjie.Imp.Text.Units.String;
+using Cangjie.Owners;
+using Cangjie.Dawn.Text;
+using Cangjie.Dawn.Text.Units;
+using Cangjie.Dawn.Text.Units.Json;
+using Cangjie.Dawn.Text.Units.String;
 
 namespace Cangjie.TypeSharp.CSharpTypeFullNameEngine;
 public class FullNameScriptEngine

@@ -1,4 +1,4 @@
-﻿# Cangjie.TypeSharp
+﻿# Cangjie.Cangjie.TypeSharp
 
 在C#运行时中解析执行TypeScript
 

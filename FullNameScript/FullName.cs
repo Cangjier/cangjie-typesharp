@@ -1,10 +1,8 @@
-﻿
-using Cangjie.Core.Exceptions;
+﻿using Cangjie.Core.Exceptions;
 using Cangjie.Core.Syntax;
-using Cangjie.Imp.Text.Units;
-using System.Text.RegularExpressions;
-using TidyHPC.Extensions;
+using Cangjie.Dawn.Text.Units;
 using Cangjie.TypeSharp.CSharpTypeFullNameEngine;
+using TidyHPC.Extensions;
 
 namespace Cangjie.TypeSharp.FullNameScript;
 public class FullName

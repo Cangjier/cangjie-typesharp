@@ -1,7 +1,12 @@
 ﻿using Cangjie.Core.Steper;
+using Cangjie.Owners;
+using TidyHPC.LiteJson;
 using Cangjie.TypeSharp.BasicType;
 using Cangjie.TypeSharp.System;
-using TidyHPC.LiteJson;
+using Cangjie.TypeSharp.FullNameScript;
+using TidyHPC.LiteXml;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Cangjie.TypeSharp.Steper;
 public class TSStepContext : StepContext<char>
@@ -24,6 +29,11 @@ public class TSStepContext : StepContext<char>
             else return typeof(Json);
         };
         UsingNamespaces.Add(typeof(console).Namespace ?? throw new NullReferenceException($"{nameof(console)}.Namespace"));
+        UsingNamespaces.Add(typeof(FullName).Namespace ?? throw new NullReferenceException($"{nameof(FullName)}.Namespace"));
+        UsingNamespaces.Add(typeof(Json).Namespace ?? throw new NullReferenceException($"{nameof(Json)}.Namespace"));
+        UsingNamespaces.Add(typeof(Xml).Namespace ?? throw new NullReferenceException($"{nameof(Xml)}.Namespace"));
+        UsingNamespaces.Add(typeof(UTF8Encoding).Namespace ?? throw new NullReferenceException($"{nameof(UTF8Encoding)}.Namespace"));
+        UsingNamespaces.Add(typeof(Regex).Namespace ?? throw new NullReferenceException($"{nameof(Regex)}.Namespace"));
         UsingNamespaces.AddRange(["System","System.IO"]);
         ContextTypes.Add(typeof(context));
         TypeInference.MixType = types =>

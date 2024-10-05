@@ -1,5 +1,7 @@
 ﻿using Cangjie.Core.Runtime;
+using Cangjie.Owners;
 using TidyHPC.LiteJson;
+using RuntimeObject = Cangjie.Core.Runtime.RuntimeObject;
 
 namespace Cangjie.TypeSharp;
 
