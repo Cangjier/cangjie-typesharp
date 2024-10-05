@@ -396,4 +396,5 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+/Cangjie.Cangjie.TypeSharp.sln
 /Cangjie.TypeSharp.sln
