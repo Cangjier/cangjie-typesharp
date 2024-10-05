@@ -91,7 +91,14 @@ public class axios
     {
         axiosResponse result = new();
         var request = new HttpRequestMessage(HttpMethod.Post, url);
-        request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
+        if (data.Is<byte[]>())
+        {
+            request.Content = new ByteArrayContent(data.As<byte[]>());
+        }
+        else
+        {
+            request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
+        }
         if (config != null)
         {
             foreach (var (key, value) in config.headers)
