@@ -6,6 +6,7 @@ using Cangjie.Dawn.Text;
 using Cangjie.Dawn.Text.Units.String;
 using TidyHPC.LiteJson;
 using Cangjie.TypeSharp.Steper;
+using Cangjie.Core.NativeOperatorMethods;
 
 namespace Cangjie.TypeSharp;
 public class TSScriptEngine
@@ -168,6 +169,25 @@ public class TSScriptEngine
             {
                 throw new Exception($"The function is not found.");
             }
+        };
+        BooleanOperatorMethods.OnLogicalNot = value =>
+        {
+            if (value is bool valueBoolean) return !valueBoolean;
+            else if (value is Json valueJson)
+            {
+                if (valueJson.IsNull || valueJson.IsUndefined) return true;
+                if (valueJson.IsBoolean) return !valueJson.IsBoolean;
+                if (valueJson.IsNumber) return valueJson.AsNumber == 0;
+                return false;
+            }
+            else if (value is int valueInt32) return valueInt32 == 0;
+            else if (value is long valueInt64) return valueInt64 == 0;
+            else if (value is float valueSingle) return valueSingle == 0;
+            else if (value is double valueDouble) return valueDouble == 0;
+            else if (value is decimal valueDecimal) return valueDecimal == 0;
+            else if (value is string valueString) return string.IsNullOrEmpty(valueString);
+            else if (value is char valueChar) return valueChar == '\0';
+            else return false;
         };
     }
 
