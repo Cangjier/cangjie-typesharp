@@ -206,9 +206,9 @@ public class axiosConfig
         return result;
     }
 
-    public Dictionary<string, string> headers { get; set; } = [];
+    public Dictionary<string, string> headers = [];
 
-    public Dictionary<string, string> @params { get; } = [];
+    public Dictionary<string, string> @params = [];
 
     public string responseType = "json";
 
