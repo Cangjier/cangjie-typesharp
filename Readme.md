@@ -1,9 +1,13 @@
 ﻿# Cangjie.Cangjie.TypeSharp
 
-在C#运行时中解析执行TypeScript
+Target: Eval type script with csharp runtime.
 
-# 路线图
+# Road Map
 
 ## 2024
 
 目标：支持typescript标准语法，但是不包括包管理、class、interface等代码组织。
+
+# To Do
+
+1. object support Enumable by Json

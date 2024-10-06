@@ -147,7 +147,7 @@ public static class context
         }
     }
 
-    public static async Task<int> cmdAsync(string workingDirectory, string commandLine,Json output)
+    public static async Task<int> cmdAsync(string workingDirectory, string commandLine, Json output)
     {
         try
         {
@@ -242,7 +242,7 @@ public static class context
             }
             throw new Exception($"`{value}` 无法解析为数字");
         }
-        else if(value.IsInt32)return value.AsInt32;
+        else if (value.IsInt32) return value.AsInt32;
         else if (value.IsDouble) return value.AsDouble;
         throw new Exception($"`{value}` 无法解析为数字");
     }
