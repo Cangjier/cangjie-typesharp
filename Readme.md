@@ -10,4 +10,4 @@ Target: Eval type script with csharp runtime.
 
 # To Do
 
-1. object support Enumable by Json
+- support === and !==

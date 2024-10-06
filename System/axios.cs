@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Web;
 using TidyHPC.Extensions;
 using TidyHPC.LiteJson;
 
@@ -34,62 +35,29 @@ public class axios
     public static async Task<axiosResponse> get(string url, axiosConfig? config)
     {
         axiosResponse result = new();
+        url = config?.getUrl(url) ?? url;
         var request = new HttpRequestMessage(HttpMethod.Get, url);
-        if (config != null)
-        {
-            foreach (var (key, value) in config.headers)
-            {
-                if (key.Contains("Content") == false)
-                {
-                    request.Headers.Add(key, value);
-                }
-                else
-                {
-                    request.Content?.Headers.TryAddWithoutValidation(key, value);
-                }
-            }
-        }
+        config?.setRequest(request);
         var response = await HttpClient.SendAsync(request);
-        result.status = (int)response.StatusCode;
-        result.statusText = response.ReasonPhrase ?? string.Empty;
-        foreach (var item in response.Headers)
-        {
-            result.headers.Add(item.Key, item.Value.Join(","));
-        }
-        // 根据 headers 中的 Content-Type 判断返回的数据类型
-        if (response.Content != null)
-        {
-            foreach (var item in response.Content.Headers)
-            {
-                result.headers.Add(item.Key, item.Value.Join(","));
-            }
-            if (config == null)
-            {
-                result.data = Json.Parse(await response.Content.ReadAsStringAsync());
-            }
-            else if (config.responseType == "json")
-            {
-                result.data = Json.Parse(await response.Content.ReadAsStringAsync());
-            }
-            else if (config.responseType == "text")
-            {
-                result.data = await response.Content.ReadAsStringAsync();
-            }
-            else if (config.responseType == "arraybuffer")
-            {
-                result.data = await response.Content.ReadAsByteArrayAsync();
-            }
-            else
-            {
-                result.data = await response.Content.ReadAsByteArrayAsync();
-            }
-        }
+        await result.setResponse(response, config);
         return result;
     }
-    
+
+    public static async Task<axiosResponse> delete(string url, axiosConfig? config)
+    {
+        axiosResponse result = new();
+        url = config?.getUrl(url) ?? url;
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        config?.setRequest(request);
+        var response = await HttpClient.SendAsync(request);
+        await result.setResponse(response, config);
+        return result;
+    }
+
     public static async Task<axiosResponse> post(string url, Json data, axiosConfig? config)
     {
         axiosResponse result = new();
+        url = config?.getUrl(url) ?? url;
         var request = new HttpRequestMessage(HttpMethod.Post, url);
         if (data.Is<byte[]>())
         {
@@ -99,57 +67,63 @@ public class axios
         {
             request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
         }
-        if (config != null)
-        {
-            foreach (var (key, value) in config.headers)
-            {
-                if (key.Contains("Content") == false)
-                {
-                    request.Headers.Add(key, value);
-                }
-                else
-                {
-                    request.Content?.Headers.TryAddWithoutValidation(key, value);
-                }
-            }
-        }
+        config?.setRequest(request);
         var response = await HttpClient.SendAsync(request);
-        result.status = (int)response.StatusCode;
-        result.statusText = response.ReasonPhrase ?? string.Empty;
-        foreach (var item in response.Headers)
-        {
-            result.headers.Add(item.Key, item.Value.Join(","));
-        }
-        // 根据 headers 中的 Content-Type 判断返回的数据类型
-        if (response.Content != null)
-        {
-            foreach (var item in response.Content.Headers)
-            {
-                result.headers.Add(item.Key, item.Value.Join(","));
-            }
-            if (config == null)
-            {
-                result.data = Json.Parse(await response.Content.ReadAsStringAsync());
-            }
-            else if (config.responseType == "json")
-            {
-                result.data = Json.Parse(await response.Content.ReadAsStringAsync());
-            }
-            else if (config.responseType == "arraybuffer")
-            {
-                result.data = await response.Content.ReadAsByteArrayAsync();
-            }
-            else
-            {
-                result.data = await response.Content.ReadAsByteArrayAsync();
-            }
-        }
+        await result.setResponse(response, config);
         return result;
     }
 
     public static async Task<axiosResponse> post(string url, Json data)
     {
         return await post(url, data, null);
+    }
+
+    public static async Task<axiosResponse> put(string url, Json data, axiosConfig? config)
+    {
+        axiosResponse result = new();
+        url = config?.getUrl(url) ?? url;
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
+        if (data.Is<byte[]>())
+        {
+            request.Content = new ByteArrayContent(data.As<byte[]>());
+        }
+        else
+        {
+            request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
+        }
+        config?.setRequest(request);
+        var response = await HttpClient.SendAsync(request);
+        await result.setResponse(response, config);
+        return result;
+    }
+
+    public static async Task<axiosResponse> put(string url, Json data)
+    {
+        return await put(url, data, null);
+    }
+
+    public static async Task<axiosResponse> patch(string url, Json data, axiosConfig? config)
+    {
+        axiosResponse result = new();
+        url = config?.getUrl(url) ?? url;
+        var request = new HttpRequestMessage(new HttpMethod("PATCH"), url);
+        if (data.Is<byte[]>())
+        {
+            request.Content = new ByteArrayContent(data.As<byte[]>());
+        }
+        else
+        {
+            request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
+        }
+        config?.setRequest(request);
+        var response = await HttpClient.SendAsync(request);
+        await result.setResponse(response, config);
+        return result;
+    }
+
+    public static async Task<axiosResponse> patch(string url, Json data)
+    {
+        return await patch(url, data, null);
     }
 
     public static async Task download(string url,string path)
@@ -173,6 +147,44 @@ public class axiosResponse
     public int status { get; set; }
 
     public string statusText { get; set; } = "";
+
+    public async Task setResponse(HttpResponseMessage response,axiosConfig? config)
+    {
+        status = (int)response.StatusCode;
+        statusText = response.ReasonPhrase ?? string.Empty;
+        foreach (var item in response.Headers)
+        {
+            headers.Add(item.Key, item.Value.Join(","));
+        }
+        // 根据 headers 中的 Content-Type 判断返回的数据类型
+        if (response.Content != null)
+        {
+            foreach (var item in response.Content.Headers)
+            {
+                headers.Add(item.Key, item.Value.Join(","));
+            }
+            if (config == null)
+            {
+                data = Json.Parse(await response.Content.ReadAsStringAsync());
+            }
+            else if (config.responseType == "json")
+            {
+                data = Json.Parse(await response.Content.ReadAsStringAsync());
+            }
+            else if (config.responseType == "text")
+            {
+                data = await response.Content.ReadAsStringAsync();
+            }
+            else if (config.responseType == "arraybuffer")
+            {
+                data = await response.Content.ReadAsByteArrayAsync();
+            }
+            else
+            {
+                data = await response.Content.ReadAsByteArrayAsync();
+            }
+        }
+    }
 }
 
 public class axiosConfig
@@ -196,5 +208,37 @@ public class axiosConfig
 
     public Dictionary<string, string> headers { get; set; } = [];
 
+    public Dictionary<string, string> @params { get; } = [];
+
     public string responseType = "json";
+
+    public void setRequest(HttpRequestMessage request)
+    {
+        foreach (var (key, value) in headers)
+        {
+            if (key.Contains("Content") == false)
+            {
+                request.Headers.Add(key, value);
+            }
+            else
+            {
+                request.Content?.Headers.TryAddWithoutValidation(key, value);
+            }
+        }
+    }
+
+    public string getUrl(string url)
+    {
+        if (@params.Count == 0)
+        {
+            return url;
+        }
+        var uri = new Uri(url);
+        var query = HttpUtility.ParseQueryString(uri.Query);
+        foreach (var (key, value) in @params)
+        {
+            query[key] = value;
+        }
+        return $"{uri.Scheme}://{uri.Host}{uri.AbsolutePath}?{query}";
+    }
 }
