@@ -10,7 +10,5 @@ Target: Eval type script with csharp runtime.
 
 # To Do
 
-- 支持Dynamic
 
-- 
 
