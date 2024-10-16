@@ -22,7 +22,7 @@ public class FullNameScriptEngine
             ((StringGuide.Branch)branch).AddStringChar('\'');
         });
         template.SymbolTemplate.Ban('_');
-        template.ReorganizationTemplate.Ban(JsonArray.Reorganization.Instance, Getter.Reorganization.Instance);
+        template.ReorganizationTemplate.Ban(JsonArray.Reorganization.Instance);
         return template;
     }
 

@@ -1,4 +1,4 @@
-﻿# Cangjie.Cangjie.TypeSharp
+﻿# Cangjie.TypeSharp
 
 Target: Eval type script with csharp runtime.
 
@@ -10,4 +10,7 @@ Target: Eval type script with csharp runtime.
 
 # To Do
 
-- support === and !==
+- 支持Dynamic
+
+- 
+

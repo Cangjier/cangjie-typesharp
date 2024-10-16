@@ -9,9 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Cangjie" Version="1.0.5" />
+    <PackageReference Include="Cangjie" Version="1.0.6" />
     <PackageReference Include="System.Management" Version="8.0.0" />
-    <PackageReference Include="TidyHPC" Version="1.0.9" />
+    <PackageReference Include="TidyHPC" Version="1.0.10" />
   </ItemGroup>
 
 </Project>

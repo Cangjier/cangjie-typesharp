@@ -60,6 +60,21 @@ public class TSScriptEngine
                             throw new Exception($"The parameters of {name} is not match.");
                         }
                     }
+                    else if (instanceType.TryFindInstanceField(name, out var fieldInfo))
+                    {
+                        if (fieldInfo.FieldType.BaseType == typeof(MulticastDelegate))
+                        {
+                            var delegateInstance = fieldInfo.GetValue(instance);
+                            if (delegateInstance is Delegate @delegate)
+                            {
+                                return new Json(@delegate.DynamicInvoke(inputValues));
+                            }
+                            else
+                            {
+                                throw new Exception($"The field {name} is not a delegate.");
+                            }
+                        }
+                    }
                     else
                     {
                         throw new Exception($"The parameters of {name} is not match.");
@@ -69,47 +84,20 @@ public class TSScriptEngine
             }
             else
             {
-                CallInstance<char>? callInstanceNullable = null;
                 Delegate? @delegate = null;
                 if (value.Is<RuntimeObject>())
                 {
                     var objectValue = value.As<RuntimeObject>();
-                    if (objectValue.Value is CallInstance<char>)
-                    {
-                        callInstanceNullable = (CallInstance<char>)objectValue.Value;
-                    }
-                    else if (objectValue.Value is Delegate)
+                    if (objectValue.Value is Delegate)
                     {
                         @delegate = (Delegate)objectValue.Value;
                     }
-                }
-                else if (value.Is<CallInstance<char>>())
-                {
-                    callInstanceNullable = value.As<CallInstance<char>>();
                 }
                 else if (value.Is<Delegate>())
                 {
                     @delegate = value.As<Delegate>();
                 }
-                if (callInstanceNullable != null)
-                {
-                    var callInstance = callInstanceNullable.Value;
-                    if (callInstance.CallInterface.ParameterCount != args.Length)
-                    {
-                        throw new Exception($"The number of parameters of {name} is not equal to {args.Length}.");
-                    }
-                    RuntimeObject[] objects = new RuntimeObject[args.Length];
-                    for (int i = 0; i < args.Length; i++)
-                    {
-                        objects[i] = new RuntimeObject()
-                        {
-                            Type = callInstance.CallInterface.ParameterTypes[i],
-                            Value = args[i].Node
-                        };
-                    }
-                    return new Json(callInstance.Invoke(objects).Value);
-                }
-                else if (@delegate != null)
+                if (@delegate != null)
                 {
                     return new Json(@delegate.DynamicInvoke([.. args.Select(arg => arg.Node)]));
                 }
@@ -121,47 +109,20 @@ public class TSScriptEngine
         };
         Json._Invoke = (self, args) =>
         {
-            CallInstance<char>? callInstanceNullable = null;
             Delegate? @delegate = null;
             if (self.Is<RuntimeObject>())
             {
                 var objectValue = self.As<RuntimeObject>();
-                if (objectValue.Value is CallInstance<char>)
-                {
-                    callInstanceNullable = (CallInstance<char>)objectValue.Value;
-                }
-                else if (objectValue.Value is Delegate)
+                if (objectValue.Value is Delegate)
                 {
                     @delegate = (Delegate)objectValue.Value;
                 }
-            }
-            else if (self.Is<CallInstance<char>>())
-            {
-                callInstanceNullable = self.As<CallInstance<char>>();
             }
             else if (self.Is<Delegate>())
             {
                 @delegate = self.As<Delegate>();
             }
-            if (callInstanceNullable != null)
-            {
-                var callInstance = callInstanceNullable.Value;
-                if (callInstance.CallInterface.ParameterCount != args.Length)
-                {
-                    throw new Exception($"The number of parameters is not equal to {args.Length}.");
-                }
-                RuntimeObject[] objects = new RuntimeObject[args.Length];
-                for (int i = 0; i < args.Length; i++)
-                {
-                    objects[i] = new RuntimeObject()
-                    {
-                        Type = callInstance.CallInterface.ParameterTypes[i],
-                        Value = callInstance.CallInterface.ParameterTypes[i] == typeof(Json) ? args[i] : args[i].Node
-                    };
-                }
-                return new Json(callInstance.Invoke(objects).Value);
-            }
-            else if (@delegate != null)
+            if (@delegate != null)
             {
                 return new Json(@delegate.DynamicInvoke([.. args.Select(arg => arg.Node)]));
             }
@@ -226,7 +187,7 @@ public class TSScriptEngine
         Console.WriteLine(Path.GetFullPath("steps.text"));
         File.WriteAllText($"steps.text", steps.ToString());
 #endif
-        TSRuntimeContext runtimeContext = new(owner);
+        TSRuntimeContext runtimeContext = new();
         onRuntimeContext?.Invoke(runtimeContext);
         steps.Run(runtimeContext);
         var lastValue = runtimeContext.GetLastObject().Value;
@@ -253,7 +214,7 @@ public class TSScriptEngine
         Console.WriteLine(Path.GetFullPath("steps.text"));
         File.WriteAllText($"steps.text", steps.ToString());
 #endif
-        TSRuntimeContext runtimeContext = new(owner);
+        TSRuntimeContext runtimeContext = new();
         onRuntimeContext?.Invoke(runtimeContext);
         await steps.RunAsync(runtimeContext);
         var lastValue = runtimeContext.GetLastObject().Value;

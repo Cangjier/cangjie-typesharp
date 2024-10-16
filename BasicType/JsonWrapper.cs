@@ -57,7 +57,7 @@ public struct JsonWrapper
                 return item;
             }
         }
-        return Json.Null;
+        return Json.Undefined;
     }
 
     public int findIndex(Func<object?, Json> onItem)
@@ -257,6 +257,12 @@ public struct JsonWrapper
         return Target.ToString();
     }
 
+    public string toString(int radix)
+    {
+        if (Target.IsNumber) return Convert.ToString((int)Target.AsNumber, radix);
+        else throw new InvalidOperationException("JsonWrapper: toString only support number type");
+    }
+
     public Json sort(Func<object?, object?, int> compare)
     {
         if (Target.IsArray)
@@ -269,6 +275,34 @@ public struct JsonWrapper
             throw new InvalidOperationException("JsonWrapper: sort only support array type");
         }
     }
+
+    public Json splice(int start, int deleteCount, params object[] items)
+    {
+        if (Target.IsArray)
+        {
+            return Target.Splice(start, deleteCount, items.Select(item => new Json(item)).ToArray());
+        }
+        else
+        {
+            throw new InvalidOperationException("JsonWrapper: splice only support array type");
+        }
+    }
+
+    public Json splice(int start) => splice(start, Target.Count - start);
+
+    public Json slice(int start, int end)
+    {
+        if (Target.IsArray)
+        {
+            return Target.Slice(start, end);
+        }
+        else
+        {
+            throw new InvalidOperationException("JsonWrapper: slice only support array type");
+        }
+    }
+
+    public Json slice(int start) => slice(start, Target.Count);
 
     /// <summary>
     /// 隐式转换代理，用于Script

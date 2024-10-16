@@ -346,6 +346,56 @@ public static class context
         return Logger.FilePath;
     }
 
+    public static string locate(string searchDirectory,string path)
+    {
+        
+        var lastDirectory = searchDirectory;
+        while (true)
+        {
+            if (lastDirectory == null)
+            {
+                return "";
+            }
+            var fullPath = Path.Combine(lastDirectory, path);
+            if (File.Exists(fullPath))
+            {
+                return fullPath;
+            }
+            else if (Directory.Exists(fullPath))
+            {
+                return fullPath;
+            }
+            if (lastDirectory == Path.GetPathRoot(lastDirectory))
+            {
+                return "";
+            }
+            lastDirectory = Path.GetDirectoryName(lastDirectory);
+        }
+    }
+
+    public static string locate(string path)
+    {
+        path = path.Trim(' ', '/', '\\');
+        string?[] baseDirectories = [
+            Path.GetDirectoryName(script_path),
+            Environment.CurrentDirectory,
+            Path.GetDirectoryName(Environment.ProcessPath),
+        ];
+        foreach (var baseDirectory in baseDirectories)
+        {
+            if (baseDirectory == null || Directory.Exists(baseDirectory) == false)
+            {
+                continue;
+            }
+            var result = locate(baseDirectory, path);
+            if (result != "")
+            {
+                return result;
+            }
+        }
+        return "";
+    }
+
     private static ConcurrentDictionary<Guid, SemaphoreSlim> locks { get; } = [];
 
     public static void @lock(Guid id)

@@ -34,6 +34,7 @@ public class TSStepContext : StepContext<char>
         UsingNamespaces.Add(typeof(Xml).Namespace ?? throw new NullReferenceException($"{nameof(Xml)}.Namespace"));
         UsingNamespaces.Add(typeof(UTF8Encoding).Namespace ?? throw new NullReferenceException($"{nameof(UTF8Encoding)}.Namespace"));
         UsingNamespaces.Add(typeof(Regex).Namespace ?? throw new NullReferenceException($"{nameof(Regex)}.Namespace"));
+        UsingNamespaces.Add(typeof(Task).Namespace ?? throw new NullReferenceException($"{nameof(Task)}.Namespace"));
         UsingNamespaces.AddRange(["System","System.IO"]);
         ContextTypes.Add(typeof(context));
         TypeInference.MixType = types =>
@@ -50,14 +51,34 @@ public class TSStepContext : StepContext<char>
 
     public bool IsSupportDefaultField { get; set; } = false;
 
+    public Json MountedVariableSpace { get; private set; } = Json.Null;
+
+    public void MountVariableSpace(Json value)
+    {
+        IsSupportDefaultField = true;
+        MountedVariableSpace = value;
+    }
+
     public override bool TryGetField(string name, out StepMetaData<char>? fieldMeta)
     {
         if(base.TryGetField(name, out fieldMeta)) return true;
-        if(IsSupportDefaultField)
+        if (IsSupportDefaultField && MountedVariableSpace.ContainsKey(name))
         {
             fieldMeta = typeof(Json);
             return true;
         }
         return false;
+    }
+
+    public override Type? GetAwaitTaskType(Type taskType)
+    {
+        if (taskType == typeof(Json))
+        {
+            return typeof(Task<object>);
+        }
+        else
+        {
+            return null;
+        }
     }
 }

@@ -7,16 +7,16 @@ namespace Cangjie.TypeSharp;
 
 public class TSRuntimeContext : RuntimeContext<char>
 {
-    public TSRuntimeContext(IOwner owner) : this(owner, [new TSScope() { Type = ScopeType.Return }])
+    public TSRuntimeContext() : this([new RuntimeScope() { Type = RuntimeScopeType.Return }])
     {
 
     }
 
-    public TSRuntimeContext(IOwner owner, TSScope[] scopes):base(owner)
+    public TSRuntimeContext(RuntimeScope[] scopes):base()
     {
         foreach (var item in scopes)
         {
-            StackVariableSpace.Push(item);
+            StackScope.Push(item);
         }
     }
 
@@ -39,6 +39,7 @@ public class TSRuntimeContext : RuntimeContext<char>
             if (jsonValue.IsTrue) return true;
             else if (jsonValue.IsFalse) return false;
             else if (jsonValue.IsUndefined) return false;
+            else if (jsonValue.IsNull) return false;
             else
             {
                 return true;
@@ -80,122 +81,11 @@ public class TSRuntimeContext : RuntimeContext<char>
         return AnyToString(value.Value);
     }
 
-    public Stack<TSScope> StackVariableSpace { get; } = new();
-
-    public override void BeginCommonScope()
-    {
-        StackVariableSpace.Push(new()
-        {
-            Type = ScopeType.Common
-        });
-    }
-
-    public override void BeginLoopScope()
-    {
-        StackVariableSpace.Push(new()
-        {
-            Type = ScopeType.Loop
-        });
-    }
-
-    public override void BeginReturnScope()
-    {
-        StackVariableSpace.Push(new()
-        {
-            Type = ScopeType.Return
-        });
-    }
-
-    public override void EndCommonScope()
-    {
-        StackVariableSpace.Pop();
-    }
-
-    public override void EndLoopScope()
-    {
-        while (true)
-        {
-            if(StackVariableSpace.TryPeek(out var scope))
-            {
-                if (scope.Type == ScopeType.Loop)
-                {
-                    StackVariableSpace.Pop();
-                    break;
-                }
-                else
-                {
-                    StackVariableSpace.Pop();
-                }
-            }
-            else
-            {
-                break;
-            }
-        }
-    }
-
-    public override void EndReturnScope()
-    {
-        while (true)
-        {
-            if(StackVariableSpace.TryPeek(out var scope))
-            {
-                if (scope.Type == ScopeType.Return)
-                {
-                    StackVariableSpace.Pop();
-                    break;
-                }
-                else
-                {
-                    StackVariableSpace.Pop();
-                }
-            }
-            else
-            {
-                break;
-            }
-        }
-    }
-
-    public override void BeginTryScope()
-    {
-        StackVariableSpace.Push(new()
-        {
-            Type = ScopeType.Try
-        });
-    }
-
-    public override void EndTryScope()
-    {
-        while (true)
-        {
-            if (StackVariableSpace.TryPeek(out var scope))
-            {
-                if (scope.Type == ScopeType.Try)
-                {
-                    StackVariableSpace.Pop();
-                    break;
-                }
-                else
-                {
-                    StackVariableSpace.Pop();
-                }
-            }
-            else
-            {
-                break;
-            }
-        }
-    }
-
     public override bool ContainsVariable(string key)
     {
-        foreach (var item in StackVariableSpace)
+        if (base.ContainsVariable(key))
         {
-            if (item.Variables.ContainsKey(key))
-            {
-                return true;
-            }
+            return true;
         }
         if(IsSupportDefaultField && MountedVariableSpace.ContainsKey(key))
         {
@@ -206,12 +96,16 @@ public class TSRuntimeContext : RuntimeContext<char>
 
     public override RuntimeObject GetVariable(string key)
     {
-        foreach (var item in StackVariableSpace)
+        foreach (var item in StackScope)
         {
-            if (item.Variables.TryGetValue(key, out RuntimeObject value))
+            if (item.TryGetValue(key, out RuntimeObject value))
             {
                 return value;
             }
+        }
+        if(CatchScope.TryGetValue(key, out RuntimeObject catchValue))
+        {
+            return catchValue;
         }
         if (IsSupportDefaultField)
         {
@@ -228,37 +122,63 @@ public class TSRuntimeContext : RuntimeContext<char>
         };
     }
 
-    public override RuntimeContext<char> RegitserVariable(string key, RuntimeObject value)
+    public override object? GetAwaitTask(object? value)
     {
-        StackVariableSpace.Peek().Variables[key] = value;
-        return this;
+        if (value is Json jsonValue)
+        {
+            return jsonValue.Node;
+        }
+        else return null;
     }
 
-    public override RuntimeContext<char> UpdateVariable(string key, RuntimeObject value)
+    public override object? GetAwaitResult(object? value)
     {
-        foreach (var item in StackVariableSpace)
+        if (value is null) throw new NullReferenceException();
+        var resultProperty = value.GetType().GetProperty("Result");
+        if (resultProperty == null) return null;
+        return resultProperty.GetValue(value);
+    }
+
+    public override RuntimeContext<char> CatchClone()
+    {
+        var context = new TSRuntimeContext([]);
+        CatchScope.CopyTo(context.CatchScope);
+        return context;
+    }
+
+    public override RuntimeContext<char> CatchClone(List<string> catchFields)
+    {
+        var context = new TSRuntimeContext([]);
+        HashSet<string> fields = [.. catchFields];
+        foreach (var item in StackScope)
         {
-            if (item.Variables.ContainsKey(key))
+            foreach(var catchField in fields.ToArray())
             {
-                item.Variables[key] = value;
-                return this;
+                if (item.Variables.TryGetValue(catchField,out var runtimeVariable))
+                {
+                    context.CatchScope.Variables.Add(catchField, runtimeVariable);
+                    fields.Remove(catchField);
+                }
+            }
+            if(fields.Count == 0)
+            {
+                break;
             }
         }
-        throw new Exception($"Variable {key} not found.");
-    }
-
-    public override void Release()
-    {
-        base.Release();
-    }
-
-    public override RuntimeContext<char> Clone()
-    {
-        var context = new TSRuntimeContext(Owner, []);
-        context.StackVariableSpace.Clear();
-        foreach (var item in StackVariableSpace)
+        if (fields.Count != 0)
         {
-            context.StackVariableSpace.Push(item);
+            foreach(var catchField in fields.ToArray())
+            {
+                if(CatchScope.Variables.TryGetValue(catchField,out var runtimeVariable))
+                {
+                    context.CatchScope.Variables.Add(catchField, runtimeVariable);
+                    fields.Remove(catchField);
+                }
+            }
+            if (fields.Count != 0)
+            {
+                throw new Exception("Catch fields not found.");
+            }
         }
         return context;
     }

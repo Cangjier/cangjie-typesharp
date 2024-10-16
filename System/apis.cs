@@ -23,14 +23,18 @@ public class apis
         }
     }
 
-    private static string logsDirectory = Path.Combine(Path.GetTempPath(), ".apis-log");
-
     public static string directory { get; set; } = findDirectory(Environment.CurrentDirectory, ".apis") ??
         findDirectory(Path.GetDirectoryName(Environment.ProcessPath), ".apis") ??
         findDirectory(Path.GetDirectoryName(context.script_path), ".apis") ?? ".apis";
 
+    private static string logsDirectory = Path.Combine(Path.GetDirectoryName(directory) ?? Path.GetTempPath(), ".apis-log");
+
     public static async Task<Json> runAsync(string apiName,Json args)
     {
+        if (Directory.Exists(logsDirectory) == false)
+        {
+            Directory.CreateDirectory(logsDirectory);
+        }
         if (apiName.EndsWith(".json")) apiName = apiName[..apiName.IndexOf(".json")];
         string apiFileName = apiName + ".json";
         var apiPath = Path.Combine(directory, apiFileName);
