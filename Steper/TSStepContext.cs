@@ -39,7 +39,9 @@ public class TSStepContext : StepContext<char>
         ContextTypes.Add(typeof(context));
         TypeInference.MixType = types =>
         {
-            if (types.All(item => item == typeof(int) || item == typeof(float) || item == typeof(double)))
+            // 如果所有types相同，返回types[0]
+            if (types.Distinct().Count() == 1) return types[0];
+            else if (types.All(item => item == typeof(int) || item == typeof(float) || item == typeof(double)))
             {
                 if (types.Contains(typeof(double))) return typeof(double);
                 else if (types.Contains(typeof(float))) return typeof(float);

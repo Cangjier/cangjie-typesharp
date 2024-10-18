@@ -16,7 +16,7 @@ public class TSStepEngine : StepParserEngine<char>
 
     public override void Initial()
     {
-        AddSingleStepParser(NumberStep.Parser.Instance, BooleanStep.Parser.Instance,NullStep.Parser.Instance, MethodStep.Parser.Instance, Prior.Parser.Instance, FieldStep.FieldStepParser.Instance, LetStep.Parser.Instance,RegexStep.Parser.Instance)
+        AddSingleStepParser(NumberStep.Parser.Instance, BooleanStep.Parser.Instance,NullStep.Parser.Instance, MethodStep.Parser.Instance, Prior.Parser.Instance,FieldStep.FieldStepParser.Instance, LetStep.Parser.Instance,RegexStep.Parser.Instance)
             .Add(StringStep.Parsers)
             .Add(NewStep.Parser.Instance)
             .Add(JsonArrayStep.Parser.Instance, JsonObjectStep.Parser.Instance)
@@ -24,7 +24,7 @@ public class TSStepEngine : StepParserEngine<char>
             .Add(LamdaStep.Parser.Instance)
             .Add(IfStep.Parser.Instance, ForStep.Parser.Instance, ForeachStep.Parser.Instance, WhileStep.Parser.Instance, TryStep.Parser.Instance)
             .Add(StatementStep.Parser.Instance);
-        CreateRank().Add(WrapStep.Parser.Instance);
+        CreateRank().Add(WrapStep.Parser.Instance,DebuggerStep.Parser.Instance);
         CreateRank().Add(TypeStep.DotParser.Instance);
         CreateRank().Add(MemberStep.MemberStepParser.Instance, IndexStep.Parser.Instance, MemberMethod.Parser.Instance,NullConditionalOperatorStep.Parser.Instance, MemberMethod.PreviousIsInstanceParser.Instance);
         CreateRank().Add(UnaryOperatorStep.Parser.UnaryPlus, UnaryOperatorStep.Parser.UnaryNegation,UnaryOperatorStep.Parser.Increment, UnaryOperatorStep.Parser.Decrement, UnaryOperatorStep.Parser.LogicalNot);
