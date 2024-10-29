@@ -71,7 +71,7 @@ public struct JsonWrapper
                 return index;
             }
         }
-        return index;
+        return -1;
     }
 
     public void push(object value)

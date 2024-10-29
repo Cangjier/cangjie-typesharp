@@ -10,9 +10,33 @@ public class zip
     public static async Task extract(string zipPath,string extractDirectory)
     {
         using ZipArchive archive = ZipFile.OpenRead(zipPath);
+        // 先判断每一个entry的根目录是否同一个，如果是同一个，则直接解压到同一个目录下
+        string? rootDirectory = null;
+        bool isSameRootDirectory = true;
+        string removeRootDirectory(string fullName)
+        {
+            if (isSameRootDirectory&& rootDirectory!=null)
+            {
+                return fullName[(rootDirectory!.Length + 1)..];
+            }
+            return fullName;
+        }
         foreach (ZipArchiveEntry entry in archive.Entries)
         {
-            string fullPath = Path.Combine(extractDirectory, entry.FullName);
+            string directory = entry.FullName.Split('/')[0];
+            if (rootDirectory == null)
+            {
+                rootDirectory = directory;
+            }
+            else if (rootDirectory != directory)
+            {
+                isSameRootDirectory = false;
+                break;
+            }
+        }
+        foreach (ZipArchiveEntry entry in archive.Entries)
+        {
+            string fullPath = Path.Combine(extractDirectory, removeRootDirectory(entry.FullName));
             if (entry.FullName.EndsWith("/"))
             {
                 Directory.CreateDirectory(fullPath);

@@ -150,6 +150,11 @@ public class TSScriptEngine
             else if (value is char valueChar) return valueChar == '\0';
             else return false;
         };
+        ObjectOperatorMethods._op_ImplicitTo = (from, toType) =>
+        {
+            if (from is Json fromJson) return Json.op_ImplicitTo(fromJson, toType);
+            else return from;
+        };
     }
 
     public static Template<char> Template { get; } = InitialTemplate(new());

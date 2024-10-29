@@ -2,6 +2,7 @@
 using System.Web;
 using TidyHPC.Extensions;
 using TidyHPC.LiteJson;
+using TidyHPC.Loggers;
 
 namespace Cangjie.TypeSharp.System;
 
@@ -10,6 +11,11 @@ namespace Cangjie.TypeSharp.System;
 /// </summary>
 public class axios
 {
+    static axios()
+    {
+        HttpClient.Timeout = TimeSpan.FromDays(8);
+    }
+
     private static HttpClient HttpClient { get; set; } = new HttpClient();
 
     public static void setProxy(string proxy)
@@ -19,12 +25,14 @@ public class axios
         {
             Proxy = new WebProxy(proxy)
         });
+        HttpClient.Timeout = TimeSpan.FromDays(8);
     }
 
     public static void unsetProxy()
     {
         HttpClient.Dispose();
         HttpClient = new HttpClient();
+        HttpClient.Timeout = TimeSpan.FromDays(8);
     }
 
     public static async Task<axiosResponse> get(string url)
@@ -165,11 +173,29 @@ public class axiosResponse
             }
             if (config == null)
             {
-                data = Json.Parse(await response.Content.ReadAsStringAsync());
+                var content = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    data = Json.Parse(await response.Content.ReadAsStringAsync());
+                }
+                catch
+                {
+                    Logger.ErrorParameter($"content", content);
+                    throw;
+                }
             }
             else if (config.responseType == "json")
             {
-                data = Json.Parse(await response.Content.ReadAsStringAsync());
+                var content = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    data = Json.Parse(await response.Content.ReadAsStringAsync());
+                }
+                catch
+                {
+                    Logger.ErrorParameter($"content", content);
+                    throw;
+                }
             }
             else if (config.responseType == "text")
             {
