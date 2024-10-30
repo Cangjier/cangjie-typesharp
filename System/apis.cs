@@ -43,6 +43,7 @@ public class apis
         var argsPath = Path.Combine(logsDirectory, $"{apiName}-args-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString("N")[..4]}.json");
         await File.WriteAllTextAsync(argsPath, args.ToString(), Util.UTF8);
         await context.execAsync(Environment.ProcessPath!, "api", "-i", apiPath, "-o", outputPath, "-a", argsPath);
+        File.Delete(argsPath);
         if (File.Exists(outputPath))
         {
             return (await Json.LoadAsync(outputPath)).Get("Response", Json.Null);
