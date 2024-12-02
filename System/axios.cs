@@ -1,4 +1,7 @@
-﻿using System.Net;
+﻿using System.IO;
+using System.IO.Compression;
+using System.Net;
+using System.Text;
 using System.Web;
 using TidyHPC.Extensions;
 using TidyHPC.LiteJson;
@@ -35,6 +38,29 @@ public class axios
         HttpClient.Timeout = TimeSpan.FromDays(8);
     }
 
+    public static void setDefaultProxy()
+    {
+        var gitProxy = Util.GetGitProxy();
+        if (string.IsNullOrEmpty(gitProxy)==false)
+        {
+            setProxy(gitProxy);
+            return;
+        }
+        var systemProxy = Util.GetSystemProxy();
+        if (string.IsNullOrEmpty(systemProxy) == false)
+        {
+            setProxy(systemProxy);
+            return;
+        }
+        var httpProxy = Environment.GetEnvironmentVariable("http_proxy");
+        if (string.IsNullOrEmpty(httpProxy) == false)
+        {
+            setProxy(httpProxy);
+            return;
+        }
+
+    }
+
     public static async Task<axiosResponse> get(string url)
     {
         return await get(url, null);
@@ -46,8 +72,21 @@ public class axios
         url = config?.getUrl(url) ?? url;
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         config?.setRequest(request);
-        var response = await HttpClient.SendAsync(request);
-        await result.setResponse(response, config);
+        HttpResponseMessage? response;
+        if (config?.useDefaultProxy == true)
+        {
+            response = await HttpClient.SendAsync(request);
+            await result.setResponse(response, config);
+        }
+        else
+        {
+            using var client = new HttpClient(new HttpClientHandler()
+            {
+                Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
+            });
+            response = await client.SendAsync(request);
+            await result.setResponse(response, config);
+        }
         return result;
     }
 
@@ -57,8 +96,21 @@ public class axios
         url = config?.getUrl(url) ?? url;
         var request = new HttpRequestMessage(HttpMethod.Delete, url);
         config?.setRequest(request);
-        var response = await HttpClient.SendAsync(request);
-        await result.setResponse(response, config);
+        HttpResponseMessage? response;
+        if (config?.useDefaultProxy == true)
+        {
+            response = await HttpClient.SendAsync(request);
+            await result.setResponse(response, config);
+        }
+        else
+        {
+            using var client = new HttpClient(new HttpClientHandler()
+            {
+                Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
+            });
+            response = await client.SendAsync(request);
+            await result.setResponse(response, config);
+        }
         return result;
     }
 
@@ -71,13 +123,30 @@ public class axios
         {
             request.Content = new ByteArrayContent(data.As<byte[]>());
         }
+        else if (data.Is<Stream>())
+        {
+            request.Content = new StreamContent(data.As<Stream>());
+        }
         else
         {
             request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
         }
         config?.setRequest(request);
-        var response = await HttpClient.SendAsync(request);
-        await result.setResponse(response, config);
+        HttpResponseMessage? response;
+        if (config?.useDefaultProxy == true)
+        {
+            response = await HttpClient.SendAsync(request);
+            await result.setResponse(response, config);
+        }
+        else
+        {
+            using var client = new HttpClient(new HttpClientHandler()
+            {
+                Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
+            });
+            response = await client.SendAsync(request);
+            await result.setResponse(response, config);
+        }
         return result;
     }
 
@@ -100,8 +169,21 @@ public class axios
             request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
         }
         config?.setRequest(request);
-        var response = await HttpClient.SendAsync(request);
-        await result.setResponse(response, config);
+        HttpResponseMessage? response;
+        if (config?.useDefaultProxy == true)
+        {
+            response = await HttpClient.SendAsync(request);
+            await result.setResponse(response, config);
+        }
+        else
+        {
+            using var client = new HttpClient(new HttpClientHandler()
+            {
+                Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
+            });
+            response = await client.SendAsync(request);
+            await result.setResponse(response, config);
+        }
         return result;
     }
 
@@ -124,8 +206,21 @@ public class axios
             request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
         }
         config?.setRequest(request);
-        var response = await HttpClient.SendAsync(request);
-        await result.setResponse(response, config);
+        HttpResponseMessage? response;
+        if (config?.useDefaultProxy == true)
+        {
+            response = await HttpClient.SendAsync(request);
+            await result.setResponse(response, config);
+        }
+        else
+        {
+            using var client = new HttpClient(new HttpClientHandler()
+            {
+                Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
+            });
+            response = await client.SendAsync(request);
+            await result.setResponse(response, config);
+        }
         return result;
     }
 
@@ -134,12 +229,81 @@ public class axios
         return await patch(url, data, null);
     }
 
-    public static async Task download(string url,string path)
+    public static async Task<string> download(string url)
     {
-        var response = await HttpClient.GetAsync(url);
-        await using var stream = await response.Content.ReadAsStreamAsync();
+        return await download(url, fileName =>
+        {
+            if (fileName == null)
+            {
+                return Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            }
+            else
+            {
+                return Path.Combine(Path.GetTempPath(), fileName);
+            }
+        });
+    }
+
+    public static async Task<string> download(string url,string path)
+    {
+        return await download(url, fileName => path);
+    }
+
+    public static async Task<string> download(string url, Func<string?, string> onPath)
+    {
+        return await download(url, onPath, (current, total) =>
+        {
+
+        });
+    }
+
+    public static async Task<string> download(string url,Func<string?, string> onPath,Action<long, long?> onProgress)
+    {
+        using var httpClient = new HttpClient();
+        var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+        response.EnsureSuccessStatusCode();
+
+        var contentLength = response.Content.Headers.ContentLength;
+        var path = onPath(response.Content.Headers.ContentDisposition?.FileName);
+
+        await using var responseStream = await response.Content.ReadAsStreamAsync();
+        Stream decompressionStream = responseStream;
+
+        // Determine if the content is compressed and wrap the stream accordingly
+        if (response.Content.Headers.ContentEncoding.Contains("gzip"))
+        {
+            decompressionStream = new GZipStream(responseStream, CompressionMode.Decompress);
+        }
+        else if (response.Content.Headers.ContentEncoding.Contains("deflate"))
+        {
+            decompressionStream = new DeflateStream(responseStream, CompressionMode.Decompress);
+        }
+        else if (response.Content.Headers.ContentEncoding.Contains("br"))
+        {
+            decompressionStream = new BrotliStream(responseStream, CompressionMode.Decompress);
+        }
+
         await using var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
-        await stream.CopyToAsync(fileStream);
+        const int bufferSize = 8192; // 8KB buffer size
+        byte[] buffer = new byte[bufferSize];
+        long totalBytesRead = 0;
+
+        while (true)
+        {
+            int bytesRead = await decompressionStream.ReadAsync(buffer, 0, bufferSize);
+            if (bytesRead == 0)
+            {
+                break; // No more data to read
+            }
+
+            await fileStream.WriteAsync(buffer, 0, bytesRead);
+            totalBytesRead += bytesRead;
+
+            // Invoke the progress callback
+            onProgress(totalBytesRead, contentLength);
+        }
+
+        return path;
     }
 }
 
@@ -173,23 +337,29 @@ public class axiosResponse
             }
             if (config == null)
             {
-                var content = await response.Content.ReadAsStringAsync();
+                var content = await response.GetResponseContentAsync();
                 try
                 {
-                    data = Json.Parse(await response.Content.ReadAsStringAsync());
+                    data = Json.Parse(content);
                 }
                 catch
                 {
+                    Logger.ErrorLinear("axiosResponse.setResponse");
+                    foreach (var item in response.Content.Headers)
+                    {
+                        Logger.ErrorParameter(item.Key, item.Value.Join(","));
+                    }
                     Logger.ErrorParameter($"content", content);
+                    Logger.ErrorLinear("");
                     throw;
                 }
             }
             else if (config.responseType == "json")
             {
-                var content = await response.Content.ReadAsStringAsync();
+                var content = await response.GetResponseContentAsync();
                 try
                 {
-                    data = Json.Parse(await response.Content.ReadAsStringAsync());
+                    data = Json.Parse(content);
                 }
                 catch
                 {
@@ -199,7 +369,7 @@ public class axiosResponse
             }
             else if (config.responseType == "text")
             {
-                data = await response.Content.ReadAsStringAsync();
+                data = await response.GetResponseContentAsync();
             }
             else if (config.responseType == "arraybuffer")
             {
@@ -218,7 +388,10 @@ public class axiosConfig
     public static implicit operator axiosConfig(Json target)
     {
         var result = new axiosConfig();
-        if(target.ContainsKey("headers"))
+        result.debug = target.Read("debug", false);
+        result.proxy = target.Read("proxy", "");
+        result.useDefaultProxy = target.Read("useDefaultProxy", true);
+        if (target.ContainsKey("headers"))
         {
             foreach (var item in target.Get("headers").GetObjectEnumerable())
             {
@@ -229,6 +402,13 @@ public class axiosConfig
         {
             result.responseType = target.Get("responseType").AsString;
         }
+        if (target.ContainsKey("params"))
+        {
+            foreach (var item in target.Get("params").GetObjectEnumerable())
+            {
+                result.@params.Add(item.Key, item.Value.AsString);
+            }
+        }
         return result;
     }
 
@@ -238,19 +418,42 @@ public class axiosConfig
 
     public string responseType = "json";
 
+    public bool debug = false;
+
+    public string proxy { get; set; } = "";
+
+    public bool useDefaultProxy = true;
+
     public void setRequest(HttpRequestMessage request)
     {
         foreach (var (key, value) in headers)
         {
             if (key.Contains("Content") == false)
             {
-                request.Headers.Add(key, value);
+                request.Headers.TryAddWithoutValidation(key, value);
             }
             else
             {
                 request.Content?.Headers.TryAddWithoutValidation(key, value);
             }
         }
+        if (debug)
+        {
+            console.log(request.Method);
+            console.log(request.RequestUri);
+            foreach (var header in request.Headers)
+            {
+                console.log($"{header.Key}:{header.Value.Join(",")}");
+            }
+            if (request.Content!=null)
+            {
+                foreach (var header in request.Content.Headers)
+                {
+                    console.log($"{header.Key}:{header.Value.Join(",")}");
+                }
+            }
+        }
+        
     }
 
     public string getUrl(string url)
@@ -259,12 +462,60 @@ public class axiosConfig
         {
             return url;
         }
-        var uri = new Uri(url);
-        var query = HttpUtility.ParseQueryString(uri.Query);
-        foreach (var (key, value) in @params)
+        var uriBuilder = new UriBuilder(url);
+        var query = HttpUtility.ParseQueryString(uriBuilder.Query);
+
+        foreach (var param in @params)
         {
-            query[key] = value;
+            query[param.Key] = param.Value;
         }
-        return $"{uri.Scheme}://{uri.Host}{uri.AbsolutePath}?{query}";
+
+        uriBuilder.Query = query.ToString();
+        return uriBuilder.ToString();
+    }
+
+    public override string ToString()
+    {
+        return new Json(this).ToString();
+    }
+}
+
+internal static class axiosUtils
+{
+    public static async Task<string> GetResponseContentAsync(this HttpResponseMessage response)
+    {
+        // 检查是否包含 Content-Encoding 头
+        if (response.Content.Headers.ContentEncoding.Contains("gzip"))
+        {
+            using (var stream = await response.Content.ReadAsStreamAsync())
+            using (var decompressionStream = new GZipStream(stream, CompressionMode.Decompress))
+            using (var reader = new StreamReader(decompressionStream, Encoding.UTF8))
+            {
+                return await reader.ReadToEndAsync();
+            }
+        }
+        else if (response.Content.Headers.ContentEncoding.Contains("deflate"))
+        {
+            using (var stream = await response.Content.ReadAsStreamAsync())
+            using (var decompressionStream = new DeflateStream(stream, CompressionMode.Decompress))
+            using (var reader = new StreamReader(decompressionStream, Encoding.UTF8))
+            {
+                return await reader.ReadToEndAsync();
+            }
+        }
+        else if (response.Content.Headers.ContentEncoding.Contains("br"))
+        {
+            using (var stream = await response.Content.ReadAsStreamAsync())
+            using (var decompressionStream = new BrotliStream(stream, CompressionMode.Decompress))
+            using (var reader = new StreamReader(decompressionStream, Encoding.UTF8))
+            {
+                return await reader.ReadToEndAsync();
+            }
+        }
+        else
+        {
+            // 如果没有 Content-Encoding，按默认方式读取
+            return await response.Content.ReadAsStringAsync();
+        }
     }
 }

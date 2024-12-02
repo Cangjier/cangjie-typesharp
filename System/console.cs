@@ -14,7 +14,7 @@ public class console
     /// 输出日志
     /// </summary>
     /// <param name="value"></param>
-    public static void log(params object[] values)
+    public static void log(params object?[] values)
     {
         var result = values.Join(" ", TSRuntimeContext.AnyToString);
         Console.WriteLine(result);

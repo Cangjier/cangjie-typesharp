@@ -30,8 +30,8 @@ public class TSStepEngine : StepParserEngine<char>
         CreateRank().Add(UnaryOperatorStep.Parser.UnaryPlus, UnaryOperatorStep.Parser.UnaryNegation,UnaryOperatorStep.Parser.Increment, UnaryOperatorStep.Parser.Decrement, UnaryOperatorStep.Parser.LogicalNot);
         CreateRank().Add(AwaitStep.Parser.Instance);
         CreateRank().Add(AssignStep.HyperAssignParser.Instance);
-        CreateRank().Add(BinaryOperator.Parser.AdditionOperators);
         CreateRank().Add(BinaryOperator.Parser.MultiplyOperators);
+        CreateRank().Add(BinaryOperator.Parser.AdditionOperators);
         CreateRank().Add(BinaryOperator.Parser.EqualityOperators);
         CreateRank().Add(BinaryOperator.Parser.GreaterThanOperators);
         CreateRank().Add(LogicalOperator.Parser.AndOperator);

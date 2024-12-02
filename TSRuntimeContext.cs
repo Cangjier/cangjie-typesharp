@@ -40,12 +40,37 @@ public class TSRuntimeContext : RuntimeContext<char>
             else if (jsonValue.IsFalse) return false;
             else if (jsonValue.IsUndefined) return false;
             else if (jsonValue.IsNull) return false;
+            else if (jsonValue.IsString)
+            {
+                return jsonValue.AsString.Length != 0;
+            }
+            else if (jsonValue.IsNumber)
+            {
+                return jsonValue.AsNumber != 0;
+            }
             else
             {
                 return true;
             }
         }
-        return false;
+        else if (value.Value is null) return false;
+        else if (value.Value is string valueString)
+        {
+            if(valueString.Length == 0) return false;
+            return Json.Undefined != valueString;
+        }
+        else if(value.Value is int valueInt)return valueInt != 0;
+        else if (value.Value is double valueDouble) return valueDouble != 0;
+        else if (value.Value is float valueFloat) return valueFloat != 0;
+        else if (value.Value is long valueLong) return valueLong != 0;
+        else if (value.Value is short valueShort) return valueShort != 0;
+        else if (value.Value is byte valueByte) return valueByte != 0;
+        else if (value.Value is sbyte valueSbyte) return valueSbyte != 0;
+        else if (value.Value is uint valueUint) return valueUint != 0;
+        else if (value.Value is ulong valueUlong) return valueUlong != 0;
+        else if (value.Value is ushort valueUshort) return valueUshort != 0;
+        else if (value.Value is decimal valueDecimal) return valueDecimal != 0;
+        else return true;
     }
 
     public override bool IsConditionNull(RuntimeObject value)
@@ -55,8 +80,19 @@ public class TSRuntimeContext : RuntimeContext<char>
         {
             return jsonValue.IsNull || jsonValue.IsUndefined;
         }
-        else if (value.Value is string valueString) return Json.Undefined == valueString;
-        return false;
+        else if (value.Value is string valueString) return Json.Undefined == valueString || valueString.Length == 0;
+        else if (value.Value is int valueInt) return valueInt == 0;
+        else if (value.Value is double valueDouble) return valueDouble == 0;
+        else if (value.Value is float valueFloat) return valueFloat == 0;
+        else if (value.Value is long valueLong) return valueLong == 0;
+        else if (value.Value is short valueShort) return valueShort == 0;
+        else if (value.Value is byte valueByte) return valueByte == 0;
+        else if (value.Value is sbyte valueSbyte) return valueSbyte == 0;
+        else if (value.Value is uint valueUint) return valueUint == 0;
+        else if (value.Value is ulong valueUlong) return valueUlong == 0;
+        else if (value.Value is ushort valueUshort) return valueUshort == 0;
+        else if (value.Value is decimal valueDecimal) return valueDecimal == 0;
+        else return false;
     }
 
     public static string AnyToString(object? value)

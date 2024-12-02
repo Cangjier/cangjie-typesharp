@@ -42,7 +42,11 @@ public class apis
         var outputPath = Path.Combine(logsDirectory, $"{apiName}-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString("N")[..4]}.json");
         var argsPath = Path.Combine(logsDirectory, $"{apiName}-args-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString("N")[..4]}.json");
         await File.WriteAllTextAsync(argsPath, args.ToString(), Util.UTF8);
-        await context.execAsync(Environment.ProcessPath!, "api", "-i", apiPath, "-o", outputPath, "-a", argsPath);
+        await context.execAsync(new()
+        {
+            filePath = Environment.ProcessPath ?? throw new Exception("Environment.ProcessPath is null"),
+            arguments = new string[] { "api", "-i", apiPath, "-o", outputPath, "-a", argsPath }
+        });
         File.Delete(argsPath);
         if (File.Exists(outputPath))
         {

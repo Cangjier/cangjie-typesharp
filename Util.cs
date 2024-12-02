@@ -1,4 +1,6 @@
-﻿using System.Security.Cryptography;
+﻿using Cangjie.TypeSharp.System;
+using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using TidyHPC.LiteJson;
 
@@ -156,16 +158,30 @@ public class Util
 
     public static string GetShellArguments(string command)
     {
-        // 处理命令行中的双引号情况
-        string escapedCommand = command.Replace("\"", "\\\"");
-
         if (Environment.OSVersion.Platform == PlatformID.Win32NT)
         {
+            string escapedCommand = command;
             return $"/c {escapedCommand}"; // Windows 下 cmd 需要使用 /c 来执行命令
         }
         else
         {
+            // 处理命令行中的双引号情况
+            string escapedCommand = command.Replace("\"", "\\\"");
             return $"-c \"{escapedCommand}\""; // Linux/MacOS 下 bash 使用 -c 参数
         }
+    }
+
+    public static string GetGitProxy()
+    {
+        return context.cmd(Environment.CurrentDirectory, "git config --global http.proxy").output;
+    }
+
+    public static string GetSystemProxy()
+    {
+        if(WebRequest.DefaultWebProxy?.GetProxy(new Uri("http://www.example.com")) is Uri webProxy)
+        {
+            return webProxy.ToString();
+        }
+        return "";
     }
 }

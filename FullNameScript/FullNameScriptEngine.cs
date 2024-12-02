@@ -6,6 +6,7 @@ using Cangjie.Dawn.Text.Units.Json;
 using Cangjie.Dawn.Text.Units.String;
 
 namespace Cangjie.TypeSharp.CSharpTypeFullNameEngine;
+
 public class FullNameScriptEngine
 {
     static FullNameScriptEngine()
@@ -22,7 +23,7 @@ public class FullNameScriptEngine
             ((StringGuide.Branch)branch).AddStringChar('\'');
         });
         template.SymbolTemplate.Ban('_');
-        template.ReorganizationTemplate.Ban(JsonArray.Reorganization.Instance);
+        template.ReorganizationTemplate.Ban(JsonArray.Reorganization.Instance, Statement.Reorganization2.Instance, Statement.Reorganization3.Instance);
         return template;
     }
 

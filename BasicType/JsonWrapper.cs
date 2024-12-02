@@ -6,7 +6,7 @@ using TidyHPC.LiteJson;
 namespace Cangjie.TypeSharp.BasicType;
 public struct JsonWrapper
 {
-    public JsonWrapper(object value)
+    public JsonWrapper(object? value)
     {
         if(value is Json jsonValue)
         {
@@ -134,6 +134,26 @@ public struct JsonWrapper
         return -1;
     }
 
+    public int indexOf(object value, int start)
+    {
+        if (Target.IsString && value is string valueString)
+        {
+            return Target.AsString.IndexOf(valueString, start);
+        }
+        else if (Target.IsArray)
+        {
+            if (value is Json valueJson)
+            {
+                return Target.IndexOf(valueJson, start);
+            }
+            else
+            {
+                return Target.IndexOf(new(value), start);
+            }
+        }
+        return -1;
+    }
+
     public int lastIndexOf(object value)
     {
         if (Target.IsString && value is string valueString)
@@ -156,22 +176,7 @@ public struct JsonWrapper
 
     public bool includes(object value)
     {
-        if (Target.IsString && value is string valueString)
-        {
-            return Target.AsString.Contains(valueString);
-        }
-        else if (Target.IsArray)
-        {
-            if(value is Json valueJson)
-            {
-                return Target.Contains(valueJson);
-            }
-            else
-            {
-                return Target.Contains(new(value));
-            }
-        }
-        return false;
+        return Target.Contains(new Json(value));
     }
 
     public List<object> split(string separator)
@@ -210,6 +215,11 @@ public struct JsonWrapper
         return temp.ToString();
     }
 
+    public string padStart(int length)
+    {
+        return padStart(length, " ");
+    }
+
     public string padStart(int length, string value)
     {
         if (Target.IsString) return Target.AsString.PadLeft(length, value[0]);
@@ -222,11 +232,17 @@ public struct JsonWrapper
         else throw new InvalidOperationException("JsonWrapper: padEnd only support string type");
     }
 
+    public string padEnd(int length)
+    {
+        return padEnd(length, " ");
+    }
+
     public int length
     {
         get
         {
-            if (Target.IsArray) return Target.AsArray.Count;
+            if(Target.IsUndefined) throw new InvalidOperationException("JsonWrapper: target is undefined");
+            else if (Target.IsArray) return Target.AsArray.Count;
             else if (Target.IsString) return Target.AsString.Length;
             else throw new InvalidOperationException("JsonWrapper: length only support array or string type");
         }
@@ -250,6 +266,35 @@ public struct JsonWrapper
     {
         if (Target.IsString) return Target.AsString.Trim();
         else throw new InvalidOperationException("JsonWrapper: trim only support string type");
+    }
+
+    public string trim(Json value)
+    {
+        return Target.AsString.Trim(value.AsString.ToArray());
+    }
+
+    public string trimStart()
+    {
+        if (Target.IsString) return Target.AsString.TrimStart();
+        else throw new InvalidOperationException("JsonWrapper: trimStart only support string type");
+    }
+
+    public string trimStart(Json value)
+    {
+        if(value.IsString) return Target.AsString.TrimStart(value.AsString.ToArray());
+        else throw new InvalidOperationException("JsonWrapper: trimStart only support string type");
+    }
+
+    public string trimEnd()
+    {
+        if (Target.IsString) return Target.AsString.TrimEnd();
+        else throw new InvalidOperationException("JsonWrapper: trimEnd only support string type");
+    }
+
+    public string trimEnd(Json value)
+    {
+        if (value.IsString) return Target.AsString.TrimEnd(value.AsString.ToArray());
+        else throw new InvalidOperationException("JsonWrapper: trimEnd only support string type");
     }
 
     public string toString()
@@ -303,6 +348,8 @@ public struct JsonWrapper
     }
 
     public Json slice(int start) => slice(start, Target.Count);
+
+    public Json reverse() => Target.Reverse();
 
     /// <summary>
     /// 隐式转换代理，用于Script

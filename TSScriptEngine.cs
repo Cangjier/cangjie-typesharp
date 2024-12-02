@@ -99,7 +99,17 @@ public class TSScriptEngine
                 }
                 if (@delegate != null)
                 {
-                    return new Json(@delegate.DynamicInvoke([.. args.Select(arg => arg.Node)]));
+                    var parameters = @delegate.Method.GetParameters();
+                    var inputTypes = args.Select(arg => arg.Node?.GetType()).ToArray();
+                    if (inputTypes.TryAssignTo(args.Select(item => item.Node).ToArray(), parameters, out var inputValues))
+                    {
+                        return new Json(@delegate.DynamicInvoke(inputValues));
+                    }
+                    else
+                    {
+                        throw new Exception($"The parameters of {name} is not match.");
+                    }
+                    //return new Json(@delegate.DynamicInvoke([.. args.Select(arg => arg.Node)]));
                 }
                 else
                 {
