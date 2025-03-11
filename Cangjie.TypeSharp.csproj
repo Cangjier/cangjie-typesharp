@@ -9,11 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Cangjie" Version="1.0.13" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
     <PackageReference Include="System.Management" Version="8.0.0" />
-    <PackageReference Include="TidyHPC" Version="1.0.18" />
-    <PackageReference Include="VizGroup" Version="1.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Github_VizGroup\VizGroup.csproj" />
+    <ProjectReference Include="..\cangjie\Cangjie.csproj" />
+    <ProjectReference Include="..\TidyHPC\TidyHPC.csproj" />
   </ItemGroup>
 
 </Project>

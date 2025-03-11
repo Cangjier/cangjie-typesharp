@@ -4,6 +4,7 @@ using Cangjie.Dawn.Steper.ControllerSteps;
 using Cangjie.Dawn.Steper.JsonSteps;
 using Cangjie.Dawn.Steper.StringSteps;
 using Cangjie.Dawn.Steper.ValueSteps;
+using Cangjie.Dawn.Text.Units.Interface;
 
 namespace Cangjie.TypeSharp.Steper;
 
@@ -16,7 +17,7 @@ public class TSStepEngine : StepParserEngine<char>
 
     public override void Initial()
     {
-        AddSingleStepParser(NumberStep.Parser.Instance, BooleanStep.Parser.Instance,NullStep.Parser.Instance, MethodStep.Parser.Instance, Prior.Parser.Instance,FieldStep.FieldStepParser.Instance, LetStep.Parser.Instance,RegexStep.Parser.Instance)
+        AddSingleStepParser(NumberStep.Parser.Instance, BooleanStep.Parser.Instance, NullStep.Parser.Instance, MethodStep.Parser.Instance, Prior.Parser.Instance, FieldStep.FieldStepParser.Instance, LetStep.Parser.Instance, RegexStep.Parser.Instance)
             .Add(StringStep.Parsers)
             .Add(NewStep.Parser.Instance)
             .Add(JsonArrayStep.Parser.Instance, JsonObjectStep.Parser.Instance)
@@ -29,13 +30,14 @@ public class TSStepEngine : StepParserEngine<char>
         CreateRank().Add(MemberStep.MemberStepParser.Instance, IndexStep.Parser.Instance, MemberMethod.Parser.Instance,NullConditionalOperatorStep.Parser.Instance, MemberMethod.PreviousIsInstanceParser.Instance);
         CreateRank().Add(UnaryOperatorStep.Parser.UnaryPlus, UnaryOperatorStep.Parser.UnaryNegation,UnaryOperatorStep.Parser.Increment, UnaryOperatorStep.Parser.Decrement, UnaryOperatorStep.Parser.LogicalNot);
         CreateRank().Add(AwaitStep.Parser.Instance);
-        CreateRank().Add(AssignStep.HyperAssignParser.Instance);
+        //CreateRank().Add(AssignStep.HyperAssignParser.Instance);
+        CreateRank().Add(TypeofStep.Parser.Instance);
         CreateRank().Add(BinaryOperator.Parser.MultiplyOperators);
         CreateRank().Add(BinaryOperator.Parser.AdditionOperators);
         CreateRank().Add(BinaryOperator.Parser.EqualityOperators);
         CreateRank().Add(BinaryOperator.Parser.GreaterThanOperators);
-        CreateRank().Add(LogicalOperator.Parser.AndOperator);
-        CreateRank().Add(LogicalOperator.Parser.OrOperator);
+        CreateRank().Add(LogicalOperator.Parser2.AndOperator);
+        CreateRank().Add(LogicalOperator.Parser2.OrOperator);
         CreateRank().Add(AsStep.Parser.Instance);
         CreateRank().Add(NullCoalescingOperatorStep.Parser.Instance);
         CreateRank().Add(TernaryOperatorStep.Parser.Instance);

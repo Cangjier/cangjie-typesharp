@@ -20,27 +20,28 @@ public struct JsonWrapper
 
     public Json Target { get; }
 
-    public void forEach(Action<object?> onItem)
+    public void forEach(Action<Json> onItem)
     {
-        Target.ForeachArray(item => onItem(item.Node));
+        Target.ForeachArray(item => onItem(item));
     }
 
-    public List<object> map(Func<object?, object> onItem)
+    public List<object> map(Func<Json, Json> onItem)
     {
         List<object> result = [];
         Target.ForeachArray(item =>
         {
-            result.Add(onItem(item.Node));
+            result.Add(onItem(item));
         });
         return result;
     }
 
-    public List<object?> filter(Func<object?, Json> onItem)
+    public List<object?> filter(Func<Json, Json> onItem)
     {
         List<object?> result = [];
         Target.ForeachArray(item =>
         {
-            if (onItem(item.Node).IsFalse==false)
+            var itemResult = onItem(item);
+            if (itemResult.IsFalse == false && itemResult.IsUndefined == false && itemResult.IsNull == false)
             {
                 result.Add(item.Node);
             }
@@ -48,11 +49,12 @@ public struct JsonWrapper
         return result;
     }
 
-    public Json find(Func<object?, Json> onItem)
+    public Json find(Func<Json, Json> onItem)
     {
         foreach (var item in Target.GetArrayEnumerable())
         {
-            if (onItem(item.Node).IsFalse==false)
+            var itemResult = onItem(item);
+            if (itemResult.IsFalse == false && itemResult.IsUndefined == false && itemResult.IsNull == false)
             {
                 return item;
             }
@@ -60,13 +62,14 @@ public struct JsonWrapper
         return Json.Undefined;
     }
 
-    public int findIndex(Func<object?, Json> onItem)
+    public int findIndex(Func<Json, Json> onItem)
     {
         int index = -1;
         foreach(var item in Target.GetArrayEnumerable())
         {
             index++;
-            if (onItem(item.Node).IsFalse==false)
+            var itemResult = onItem(item);
+            if (itemResult.IsFalse == false && itemResult.IsUndefined == false && itemResult.IsNull == false)
             {
                 return index;
             }
@@ -74,20 +77,17 @@ public struct JsonWrapper
         return -1;
     }
 
-    public void push(object value)
+    public void push(params Json[] values)
     {
-        Target.Add(value);
+        foreach (var value in values)
+        {
+            Target.Add(value);
+        }
     }
 
-    public int unshift(object value)
+    public string join(Json separator)
     {
-        Target.Insert(0, new Json(value));
-        return Target.Count;
-    }
-
-    public string join(string separator)
-    {
-        return Target.GetArrayEnumerable().Join(separator);
+        return Target.GetArrayEnumerable().Join(separator.AsString);
     }
 
     public bool endsWith(string value)
@@ -114,69 +114,48 @@ public struct JsonWrapper
         else throw new InvalidOperationException("JsonWrapper: subString only support string type");
     }
 
-    public int indexOf(object value)
+    public int indexOf(Json value)
     {
-        if (Target.IsString && value is string valueString)
+        if (Target.IsString && value.IsString)
         {
-            return Target.AsString.IndexOf(valueString);
+            return Target.AsString.IndexOf(value.AsString);
         }
         else if (Target.IsArray)
         {
-            if(value is Json valueJson)
-            {
-                return Target.IndexOf(valueJson);
-            }
-            else
-            {
-                return Target.IndexOf(new(value));
-            }
+            return Target.IndexOf(value);
         }
         return -1;
     }
 
-    public int indexOf(object value, int start)
+    public int indexOf(Json value, Json start)
     {
-        if (Target.IsString && value is string valueString)
+        if (Target.IsString && value.IsString)
         {
-            return Target.AsString.IndexOf(valueString, start);
+            return Target.AsString.IndexOf(value.AsString, start.ToInt32);
         }
         else if (Target.IsArray)
         {
-            if (value is Json valueJson)
-            {
-                return Target.IndexOf(valueJson, start);
-            }
-            else
-            {
-                return Target.IndexOf(new(value), start);
-            }
+            return Target.IndexOf(value, start.ToInt32);
         }
         return -1;
     }
 
-    public int lastIndexOf(object value)
+    public int lastIndexOf(Json value)
     {
-        if (Target.IsString && value is string valueString)
+        if (Target.IsString && value.IsString)
         {
-            return Target.AsString.LastIndexOf(valueString);
+            return Target.AsString.LastIndexOf(value.AsString);
         }
         else if (Target.IsArray)
         {
-            if (value is Json valueJson)
-            {
-                return Target.LastIndexOf(valueJson);
-            }
-            else
-            {
-                return Target.LastIndexOf(new(value));
-            }
+            return Target.LastIndexOf(value);
         }
         return -1;
     }
 
-    public bool includes(object value)
+    public bool includes(Json value)
     {
-        return Target.Contains(new Json(value));
+        return Target.Contains(value);
     }
 
     public List<object> split(string separator)
@@ -237,14 +216,15 @@ public struct JsonWrapper
         return padEnd(length, " ");
     }
 
-    public int length
+    public Json length
     {
         get
         {
-            if(Target.IsUndefined) throw new InvalidOperationException("JsonWrapper: target is undefined");
+            if (Target.IsUndefined) return Json.Undefined;
             else if (Target.IsArray) return Target.AsArray.Count;
             else if (Target.IsString) return Target.AsString.Length;
-            else throw new InvalidOperationException("JsonWrapper: length only support array or string type");
+            else if (Target.IsObject) return Json.Undefined;
+            else return Json.Undefined;
         }
     }
 
@@ -308,11 +288,11 @@ public struct JsonWrapper
         else throw new InvalidOperationException("JsonWrapper: toString only support number type");
     }
 
-    public Json sort(Func<object?, object?, int> compare)
+    public Json sort(Func<Json, Json, int> compare)
     {
         if (Target.IsArray)
         {
-            Target.Sort((a, b) => compare(a.Node, b.Node));
+            Target.Sort((a, b) => compare(a, b));
             return Target;
         }
         else
@@ -321,11 +301,11 @@ public struct JsonWrapper
         }
     }
 
-    public Json splice(int start, int deleteCount, params object[] items)
+    public Json splice(int start, int deleteCount, params Json[] items)
     {
         if (Target.IsArray)
         {
-            return Target.Splice(start, deleteCount, items.Select(item => new Json(item)).ToArray());
+            return Target.Splice(start, deleteCount, items);
         }
         else
         {
@@ -350,6 +330,285 @@ public struct JsonWrapper
     public Json slice(int start) => slice(start, Target.Count);
 
     public Json reverse() => Target.Reverse();
+
+    public Json some(Func<Json, Json> onItem)
+    {
+        foreach (var item in Target.GetArrayEnumerable())
+        {
+            var itemResult = onItem(item);
+            if (itemResult.IsFalse == false && itemResult.IsUndefined == false && itemResult.IsNull == false)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Json concat(params Json[] items)
+    {
+        return Target.Concat(items);
+    }
+
+    public Json reduce(Func<Json, Json, Json> onItem, Json initialValue)
+    {
+        Json result = initialValue;
+        foreach (var item in Target.GetArrayEnumerable())
+        {
+            result = onItem(result, item);
+        }
+        return result;
+    }
+
+    public Json reduce(Func<Json, Json, Json> onItem)
+    {
+        var array = Target.GetArrayEnumerable();
+        Json result = array.First();
+        foreach (var item in array.Skip(1))
+        {
+            result = onItem(result, item);
+        }
+        return result;
+    }
+
+    public Json reduceRight(Func<Json, Json, Json> onItem, Json initialValue)
+    {
+        Json result = initialValue;
+        foreach (var item in Target.GetArrayEnumerable().Reverse())
+        {
+            result = onItem(result, item);
+        }
+        return result;
+    }
+
+    public Json reduceRight(Func<Json, Json, Json> onItem)
+    {
+        var array = Target.GetArrayEnumerable().Reverse();
+        Json result = array.First();
+        foreach (var item in array.Skip(1))
+        {
+            result = onItem(result, item);
+        }
+        return result;
+    }
+
+    public Json pop()
+    {
+        Target.RemoveAt(Target.Count - 1);
+        return Target;
+    }
+
+    public Json shift()
+    {
+        var first = Target[0];
+        Target.RemoveAt(0);
+        return first;
+    }
+
+    public Json fill(Json item, int start, int end)
+    {
+        var self = Target;
+        for (int i = start; i < end; i++)
+        {
+            self[i] = item;
+        }
+        return self;
+    }
+
+    public Json fill(Json item)
+    {
+        int count = Target.Count;
+        var self = Target;
+        for (int i = 0; i < count; i++)
+        {
+            self[i] = item;
+        }
+        return self;
+    }
+
+    public Json unshift(params Json[] items)
+    {
+        for(int i = items.Length - 1; i >= 0; i--)
+        {
+            Target.Insert(0, items[i]);
+        }
+        return Target;
+    }
+
+    public Json every(Func<Json, Json> onItem)
+    {
+        foreach (var item in Target.GetArrayEnumerable())
+        {
+            var itemResult = onItem(item);
+            if (itemResult.IsFalse == false || itemResult.IsUndefined == false || itemResult.IsNull == false)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public Json toFixed(Json digits)
+    {
+        if (Target.IsNumber)
+        {
+            return Math.Round(Target.AsNumber, digits.ToInt32);
+        }
+        else
+        {
+            throw new InvalidOperationException("JsonWrapper: toFixed only support number type");
+        }
+    }
+
+    public Json toExponential(Json digits)
+    {
+        if (Target.IsNumber)
+        {
+            return Target.AsNumber.ToString($"E{digits.ToInt32}");
+        }
+        else
+        {
+            throw new InvalidOperationException("JsonWrapper: toExponential only support number type");
+        }
+    }
+
+    public Json toPrecision(Json digits)
+    {
+        if (Target.IsNumber)
+        {
+            return Target.AsNumber.ToString($"F{digits.ToInt32}");
+        }
+        else
+        {
+            throw new InvalidOperationException("JsonWrapper: toPrecision only support number type");
+        }
+    }
+
+    public Json toLocaleString()
+    {
+        return Target.Node?.ToString() ?? "null";
+    }
+
+    public Json flat(Json depth)
+    {
+        void _flat(Json target, Json depth, Json result)
+        {
+            if (depth.ToInt32 == 0)
+            {
+                result.Add(target);
+            }
+            else
+            {
+                foreach (var item in target.GetArrayEnumerable())
+                {
+                    _flat(item, depth - 1, result);
+                }
+            }
+        }
+
+        Json result = Json.NewArray();
+        _flat(Target, depth, result);
+        return result;
+    }
+
+    public Json flat()
+    {
+        void _flat(Json target, Json result)
+        {
+            foreach (var item in target.GetArrayEnumerable())
+            {
+                if (item.IsArray)
+                {
+                    _flat(item, result);
+                }
+                else
+                {
+                    result.Add(item);
+                }
+            }
+        }
+
+        Json result = Json.NewArray();
+        _flat(Target, result);
+        return result;
+    }
+
+    public Json flatMap(Func<Json, Json> onItem)
+    {
+        Json result = Json.NewArray();
+        void _flat(Json target, Json result)
+        {
+            foreach (var item in target.GetArrayEnumerable())
+            {
+                var temp = onItem(item);
+                if (temp.IsArray)
+                {
+                    _flat(temp, result);
+                }
+                else
+                {
+                    result.Add(temp);
+                }
+            }
+        }
+        _flat(Target, result);
+        return result;
+    }
+
+    public Json flatMap(Func<Json, Json> onItem, Json depth)
+    {
+        Json result = Json.NewArray();
+        void _flat(Json target, Json depth, Json result)
+        {
+            if (depth.ToInt32 == 0)
+            {
+                result.Add(target);
+            }
+            else
+            {
+                foreach (var item in target.GetArrayEnumerable())
+                {
+                    var temp = onItem(item);
+                    if (temp.IsArray)
+                    {
+                        _flat(temp, depth - 1, result);
+                    }
+                    else
+                    {
+                        result.Add(temp);
+                    }
+                }
+            }
+        }
+        _flat(Target, depth, result);
+        return result;
+    }
+
+    public Json match(Json value)
+    {
+        if (Target.IsString==false)
+        {
+            throw new InvalidOperationException("JsonWrapper: match only support string type");
+        }
+        Regex regex;
+        if (value.IsString)
+        {
+            regex = new(value.AsString);
+        }
+        else if (value.Is<Regex>())
+        {
+            regex = value.As<Regex>();
+        }
+        else
+        {
+            throw new InvalidOperationException("JsonWrapper: match only support string or regex type");
+        }
+        var result = Json.NewArray();
+        foreach (Match item in regex.Matches(Target.AsString))
+        {
+            result.Add(item.Value);
+        }
+        return result;
+    }
 
     /// <summary>
     /// 隐式转换代理，用于Script

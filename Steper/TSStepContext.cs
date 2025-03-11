@@ -28,7 +28,7 @@ public class TSStepContext : StepContext<char>
             }
             else return typeof(Json);
         };
-        UsingNamespaces.Add(typeof(console).Namespace ?? throw new NullReferenceException($"{nameof(console)}.Namespace"));
+        UsingNamespaces.Add(typeof(Consoles).Namespace ?? throw new NullReferenceException($"{nameof(Consoles)}.Namespace"));
         UsingNamespaces.Add(typeof(FullName).Namespace ?? throw new NullReferenceException($"{nameof(FullName)}.Namespace"));
         UsingNamespaces.Add(typeof(Json).Namespace ?? throw new NullReferenceException($"{nameof(Json)}.Namespace"));
         UsingNamespaces.Add(typeof(Xml).Namespace ?? throw new NullReferenceException($"{nameof(Xml)}.Namespace"));
@@ -36,7 +36,8 @@ public class TSStepContext : StepContext<char>
         UsingNamespaces.Add(typeof(Regex).Namespace ?? throw new NullReferenceException($"{nameof(Regex)}.Namespace"));
         UsingNamespaces.Add(typeof(Task).Namespace ?? throw new NullReferenceException($"{nameof(Task)}.Namespace"));
         UsingNamespaces.AddRange(["System","System.IO"]);
-        ContextTypes.Add(typeof(context));
+        ContextTypes.Add(typeof(staticContext));
+        ContextObjects.Add(typeof(Context));
         TypeInference.MixType = types =>
         {
             // 如果所有types相同，返回types[0]
@@ -53,18 +54,18 @@ public class TSStepContext : StepContext<char>
 
     public bool IsSupportDefaultField { get; set; } = false;
 
-    public Json MountedVariableSpace { get; private set; } = Json.Null;
+    public Func<Json>? GetMountedVariableSpace { get;private set; }
 
-    public void MountVariableSpace(Json value)
+    public void MountVariableSpace(Func<Json> getMountedVariableSpace)
     {
         IsSupportDefaultField = true;
-        MountedVariableSpace = value;
+        GetMountedVariableSpace = getMountedVariableSpace;
     }
 
     public override bool TryGetField(string name, out StepMetaData<char>? fieldMeta)
     {
         if(base.TryGetField(name, out fieldMeta)) return true;
-        if (IsSupportDefaultField && MountedVariableSpace.ContainsKey(name))
+        if (IsSupportDefaultField && GetMountedVariableSpace?.Invoke().ContainsKey(name)==true)
         {
             fieldMeta = typeof(Json);
             return true;
@@ -82,5 +83,15 @@ public class TSStepContext : StepContext<char>
         {
             return null;
         }
+    }
+
+    public override Type GetTypeofType()
+    {
+        return typeof(string);
+    }
+
+    public override Type GetArrayType(Type elementType)
+    {
+        return typeof(Json);
     }
 }

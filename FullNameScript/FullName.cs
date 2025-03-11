@@ -270,4 +270,6 @@ public class FullName
         }
         return string.Join("", tokens);
     }
+
+    public string ToFullString() => ToString();
 }

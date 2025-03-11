@@ -55,4 +55,10 @@ public class processConfig
         get => Target.Read("createNoWindow", true);
         set => Target.Set("createNoWindow", value);
     }
+
+    public Json environment
+    {
+        get => Target.Get("environment", Json.Null);
+        set => Target.Set("environment", value);
+    }
 }

@@ -1,12 +1,5 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
-using TidyHPC.Extensions;
-using TidyHPC.LiteJson;
+﻿using TidyHPC.LiteJson;
 using TidyHPC.Loggers;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Cangjie.TypeSharp.System;
 
@@ -14,380 +7,118 @@ namespace Cangjie.TypeSharp.System;
 /// 上下文
 /// </summary>
 #pragma warning disable CS8981 // 该类型名称仅包含小写 ascii 字符。此类名称可能会成为该语言的保留值。
-public static class context
+public class Context:IDisposable
 #pragma warning restore CS8981 // 该类型名称仅包含小写 ascii 字符。此类名称可能会成为该语言的保留值。
 {
-    /// <summary>
-    /// 参数
-    /// </summary>
-    public static string[] args = [];
-
-    public static Json manifest = Json.NewObject();
-
-    public static string script_path = "";
-
-    public static object? @null = null;
-
-    public static Json undefined = Json.Undefined;
-
-    public static processResult exec(processConfig config)
+    public Context()
     {
-        var process = new Process();
-        process.StartInfo.FileName = config.filePath;
-        if (config.workingDirectory != string.Empty)
+        _apis = new(this);
+        _console = new(this);
+        _axios = new(this);
+        _Logger = new LoggerFile();
+        _context = Json.NewObject();
+    }
+
+    public Context(Context reference)
+    {
+        this.reference = reference;
+    }
+
+    private Json _context = Json.Null;
+
+    private Context? reference = null;
+
+    public Json context => reference == null ? _context : reference.context;
+
+    public Json getContext()
+    {
+        return context;
+    }
+
+    private Apis? _apis = null;
+
+    public Apis apis => reference == null ? (_apis ?? throw new NullReferenceException(nameof(_apis))) : reference.apis;
+
+    private Consoles? _console = null;
+
+    public Consoles console => reference == null ? (_console ?? throw new NullReferenceException(nameof(_console))) : reference.console;
+
+    private Axios? _axios = null;
+
+    public Axios axios => reference == null ? (_axios ?? throw new NullReferenceException(nameof(_axios))) : reference.axios;
+
+    private LoggerFile? _Logger = null;
+
+    public LoggerFile Logger
+    {
+        get => reference == null ? (_Logger ?? throw new NullReferenceException(nameof(_Logger))) : reference.Logger;
+        set
         {
-            process.StartInfo.WorkingDirectory = config.workingDirectory;
-        }
-        process.StartInfo.UseShellExecute = config.useShellExecute;
-        process.StartInfo.CreateNoWindow = config.createNoWindow;
-        process.StartInfo.RedirectStandardOutput = config.redirect;
-        process.StartInfo.RedirectStandardError = config.redirect;
-        if (config.arguments.IsString)
-        {
-            process.StartInfo.Arguments = config.arguments.AsString;
-        }
-        else if (config.arguments.IsArray)
-        {
-            config.arguments.Foreach(item => process.StartInfo.ArgumentList.Add(item.AsString));
-        }
-        StringBuilder output = new();
-        StringBuilder error = new();
-        if (config.redirect)
-        {
-            process.OutputDataReceived += (sender, e) =>
+            if (reference == null)
             {
-                if (e.Data != null)
-                {
-                    output.AppendLine(e.Data);
-                }
-            };
-            process.ErrorDataReceived += (sender, e) =>
-            {
-                if (e.Data != null)
-                {
-                    error.AppendLine(e.Data);
-                }
-            };
-        }
-        
-        process.Start();
-        if (config.redirect)
-        {
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-        }
-        process.WaitForExit();
-        var result = new processResult();
-        result.output = output.ToString();
-        result.error = error.ToString();
-        result.exitCode = process.ExitCode;
-        return result;
-    }
-
-    public static async Task<processResult> execAsync(processConfig config)
-    {
-        var process = new Process();
-        process.StartInfo.FileName = config.filePath;
-        if (config.workingDirectory != string.Empty)
-        {
-            process.StartInfo.WorkingDirectory = config.workingDirectory;
-        }
-        process.StartInfo.UseShellExecute = config.useShellExecute;
-        process.StartInfo.CreateNoWindow = config.createNoWindow;
-        process.StartInfo.RedirectStandardOutput = config.redirect;
-        process.StartInfo.RedirectStandardError = config.redirect;
-        if (config.arguments.IsString)
-        {
-            process.StartInfo.Arguments = config.arguments.AsString;
-        }
-        else if (config.arguments.IsArray)
-        {
-            config.arguments.Foreach(item => process.StartInfo.ArgumentList.Add(item.AsString));
-        }
-        List<string> output = [];
-        List<string> error = [];
-        if (config.redirect)
-        {
-            process.OutputDataReceived += (sender, e) =>
-            {
-                if (e.Data != null)
-                {
-                    output.Add(e.Data);
-                }
-            };
-            process.ErrorDataReceived += (sender, e) =>
-            {
-                if (e.Data != null)
-                {
-                    error.Add(e.Data);
-                }
-            };
-        }
-
-        process.Start();
-        if (config.redirect)
-        {
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-        }
-        await process.WaitForExitAsync();
-        var result = new processResult();
-        result.output = output.Join("\r\n");
-        result.error = error.Join("\r\n");
-        result.exitCode = process.ExitCode;
-        return result;
-    }
-
-    public static int start(processConfig config)
-    {
-        var process = new Process();
-        process.StartInfo.FileName = config.filePath;
-        process.StartInfo.WorkingDirectory = config.workingDirectory;
-        process.StartInfo.UseShellExecute = config.useShellExecute;
-        config.arguments.Foreach(item => process.StartInfo.ArgumentList.Add(item.AsString));
-        process.Start();
-        return process.Id;
-    }
-
-    public static void kill(int pid)
-    {
-        var process = Process.GetProcessById(pid);
-        process.Kill();
-    }
-
-    public static processResult cmd(string workingDirectory, string commandLine)
-    {
-        return exec(new processConfig
-        {
-            filePath = Util.GetShell(),
-            workingDirectory = workingDirectory,
-            arguments = new Json(Util.GetShellArguments(commandLine))
-        });
-    }
-
-    public static processResult cmd(string workingDirectory, string commandLine,processConfig config)
-    {
-        return exec(new processConfig
-        {
-            filePath = Util.GetShell(),
-            workingDirectory = workingDirectory,
-            arguments = new Json(Util.GetShellArguments(commandLine)),
-            useShellExecute = config.useShellExecute,
-            createNoWindow = config.createNoWindow,
-            redirect = config.redirect
-        });
-    }
-
-    public static async Task<processResult> cmdAsync(string workingDirectory, string commandLine)
-    {
-        return await execAsync(new processConfig
-        {
-            filePath = Util.GetShell(),
-            workingDirectory = workingDirectory,
-            arguments = new Json(Util.GetShellArguments(commandLine))
-        });
-    }
-
-    public static async Task<processResult> cmdAsync(string workingDirectory, string commandLine, processConfig config)
-    {
-        return await execAsync(new processConfig
-        {
-            filePath = Util.GetShell(),
-            workingDirectory = workingDirectory,
-            arguments = new Json(Util.GetShellArguments(commandLine)),
-            useShellExecute = config.useShellExecute,
-            createNoWindow = config.createNoWindow,
-            redirect = config.redirect
-        });
-    }
-
-    public static void startCmd(string workingDirectory, string commandLine)
-    {
-        try
-        {
-            // 创建一个新的进程启动信息
-            ProcessStartInfo startInfo = new()
-            {
-                FileName = Util.GetShell(), // 根据系统获取合适的 shell
-                Arguments = Util.GetShellArguments(commandLine), // shell 的参数，包括命令行
-                UseShellExecute = false,        // 启用 shell 执行，避免重定向
-                CreateNoWindow = true,        // 允许创建窗口
-                WorkingDirectory = workingDirectory // 设置工作目录
-            };
-
-            Process process = new() { StartInfo = startInfo };
-            // 启动进程
-            process.Start();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("An error occurred: " + ex.Message);
-        }
-    }
-
-    public static double parseFloat(string value)
-    {
-        return double.Parse(value);
-    }
-
-    public static int parseInt(string value)
-    {
-        return int.Parse(value);
-    }
-
-    public static string toString(object value)
-    {
-        return value.ToString() ?? string.Empty;
-    }
-
-    public static object Number(Json value)
-    {
-        if (value.IsString)
-        {
-            var valueString = value.AsString;
-            // 尝试解析为整数
-            if (int.TryParse(valueString, out int intValue))
-            {
-                return intValue;
-            }
-            else if (double.TryParse(valueString, out double doubleValue))
-            {
-                return doubleValue;
-            }
-            throw new Exception($"`{value}` 无法解析为数字");
-        }
-        else if (value.IsInt32) return value.AsInt32;
-        else if (value.IsDouble) return value.AsDouble;
-        throw new Exception($"`{value}` 无法解析为数字");
-    }
-
-    /// <summary>
-    /// 拷贝文件夹
-    /// </summary>
-    /// <param name="sourceDirectory"></param>
-    /// <param name="destinationDirectory"></param>
-    /// <returns></returns>
-    public static void copyDirectory(
-        string sourceDirectory,
-        string destinationDirectory)
-    {
-        if (!Directory.Exists(sourceDirectory))
-        {
-            Console.WriteLine("Source directory does not exist.");
-            return;
-        }
-
-        if (!Directory.Exists(destinationDirectory))
-        {
-            Directory.CreateDirectory(destinationDirectory);
-        }
-
-        foreach (string item in Directory.GetDirectories(sourceDirectory, "*", SearchOption.AllDirectories))
-        {
-            var relativePath = Path.GetRelativePath(sourceDirectory, item);
-            var destination = Path.Combine(destinationDirectory, relativePath);
-            if (Directory.Exists(destination) == false)
-            {
-                Directory.CreateDirectory(Path.Combine(destinationDirectory, relativePath));
+                _Logger = value;
             }
             else
             {
-                // 如果目录是只读的，先取消只读
-                var di = new DirectoryInfo(destination);
-                if ((di.Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
-                {
-                    di.Attributes &= ~FileAttributes.ReadOnly;
-                }
+                reference.Logger = value;
             }
-        }
-
-        foreach (string item in Directory.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories))
-        {
-            var relativePath = Path.GetRelativePath(sourceDirectory, item);
-            var destination = Path.Combine(destinationDirectory, relativePath);
-            // 如果文件是只读的，先取消只读
-            if (File.Exists(destination))
-            {
-                var fi = new FileInfo(destination);
-                if ((fi.Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
-                {
-                    fi.Attributes &= ~FileAttributes.ReadOnly;
-                }
-            }
-            File.Copy(item, Path.Combine(destinationDirectory, relativePath), true);
         }
     }
 
-    public static void deleteFile(string sourcePath)
+    private string[]? _args = null;
+
+    /// <summary>
+    /// 参数
+    /// </summary>
+    public string[] args
     {
-        try
+        get => reference == null ? _args ?? throw new NullReferenceException(nameof(_args)) : reference.args;
+        set
         {
-            var fi = new FileInfo(sourcePath);
-            if ((fi.Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+            if (reference == null)
             {
-                fi.Attributes &= ~FileAttributes.ReadOnly;
+                _args = value;
             }
-            File.Delete(sourcePath);
-        }
-        catch
-        {
-            // 删除失败可能是什么原因？
+            else
+            {
+                reference.args = value;
+            }
         }
     }
 
-    public static void deleteDirectory(string sourceDirectory)
+    private Json _manifest = Json.Null;
+
+    public Json manifest
     {
-        if (!Directory.Exists(sourceDirectory))
+        get => reference == null ? _manifest : reference.manifest;
+        set
         {
-            Console.WriteLine("Source directory does not exist.");
-            return;
-        }
-
-        foreach (string item in Directory.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories))
-        {
-            deleteFile(item);
-        }
-        Directory.Delete(sourceDirectory, true);
-    }
-
-    public static void setLoggerPath(string path)
-    {
-        Logger.FilePath = path;
-    }
-
-    public static string getLoggerPath()
-    {
-        return Logger.FilePath;
-    }
-
-    public static string locate(string searchDirectory, string path)
-    {
-
-        var lastDirectory = searchDirectory;
-        while (true)
-        {
-            if (lastDirectory == null)
+            if (reference == null)
             {
-                return "";
+                _manifest = value;
             }
-            var fullPath = Path.Combine(lastDirectory, path);
-            if (File.Exists(fullPath))
+            else
             {
-                return fullPath;
+                reference.manifest = value;
             }
-            else if (Directory.Exists(fullPath))
-            {
-                return fullPath;
-            }
-            if (lastDirectory == Path.GetPathRoot(lastDirectory))
-            {
-                return "";
-            }
-            lastDirectory = Path.GetDirectoryName(lastDirectory);
         }
     }
 
-    public static string locate(string path)
+    public string script_path = "";
+
+    public void setContext(Json context)
+    {
+        if(reference == null)
+        {
+            _context = context;
+        }
+        else
+        {
+            reference.setContext(context);
+        }
+    }
+
+    public string locate(string path)
     {
         path = path.Trim(' ', '/', '\\');
         string?[] baseDirectories = [
@@ -401,7 +132,7 @@ public static class context
             {
                 continue;
             }
-            var result = locate(baseDirectory, path);
+            var result = staticContext.locate(baseDirectory, path);
             if (result != "")
             {
                 return result;
@@ -410,110 +141,35 @@ public static class context
         return "";
     }
 
-    private static ConcurrentDictionary<Guid, SemaphoreSlim> locks { get; } = [];
-
-    public static void @lock(Guid id)
+    public Json eval(string script)
     {
-        SemaphoreSlim? semaphore;
-        lock (locks)
-        {
-            if (locks.TryGetValue(id, out semaphore) == false)
-            {
-                semaphore = new SemaphoreSlim(1, 1);
-                locks[id] = semaphore;
-            }
-        }
-        semaphore.Wait();
+        using var context = new Context(this);
+        return TSScriptEngine.Run(script, context);
     }
 
-    public static async Task lockAsync(Guid id)
+    public void setLoggerPath(string path)
     {
-        SemaphoreSlim? semaphore;
-        lock (locks)
-        {
-            if (locks.TryGetValue(id, out semaphore) == false)
-            {
-                semaphore = new SemaphoreSlim(1, 1);
-                locks[id] = semaphore;
-            }
-        }
-        await semaphore.WaitAsync();
+        Logger.FilePath = path;
     }
 
-    public static void unlock(Guid id)
+    public string getLoggerPath()
     {
-        locks[id].Release();
+        return Logger.FilePath;
     }
 
-    public static bool lockFile(string filePath)
+    public void Dispose()
     {
-        try
-        {
-            using var fs = new FileStream(filePath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public static bool unlockFile(string filePath)
-    {
-        int retryCount = 3;
-        bool success = false;
-        for (int i = 0; i < retryCount; i++)
-        {
-            try
-            {
-                File.Delete(filePath);
-                success = true;
-                break;
-            }
-            catch
-            {
-                // 删除失败可能是什么原因？
-            }
-        }
-        return success;
-    }
-
-    public static string env(string environmentVariable)
-    {
-        var lowerEnvironmentVariable = environmentVariable.ToLower();
-        if (Environment.GetEnvironmentVariable(environmentVariable) is string result)
-        {
-            return result;
-        }
-        else if (lowerEnvironmentVariable == "desktop")
-        {
-            return Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        }
-        else if (lowerEnvironmentVariable == "userprofile")
-        {
-            return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        }
-        else if (lowerEnvironmentVariable == "appdata")
-        {
-            return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        }
-        else if (lowerEnvironmentVariable == "mydocuments")
-        {
-            return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        }
-        return string.Empty;
-    }
-
-    public static string md5(Json value)
-    {
-        using var md5 = MD5.Create();
-        if (value.IsString)
-        {
-            return BitConverter.ToString(md5.ComputeHash(Encoding.UTF8.GetBytes(value.AsString))).Replace("-", "").ToLower();
-        }
-        else
-        {
-            return BitConverter.ToString(md5.ComputeHash(Encoding.UTF8.GetBytes(value.ToString()))).Replace("-", "").ToLower();
-        }
+        _args = null;
+        script_path = null!;
+        _apis?.Dispose();
+        _apis = null!;
+        _Logger?.Dispose();
+        _Logger = null!;
+        _console?.Dispose();
+        _console = null!;
+        _axios?.Dispose();
+        _axios = null!;
+        _context = Json.Null;
+        reference = null;
     }
 }

@@ -1,4 +1,8 @@
-﻿using VizGroup.V1;
+﻿using TidyHPC.Common;
+using TidyHPC.LiteJson;
+using TidyHPC.Routers.Urls.Responses;
+using VizGroup.V1;
+using VizGroup.V1.IOStorage;
 
 namespace Cangjie.TypeSharp.System;
 
@@ -7,12 +11,46 @@ namespace Cangjie.TypeSharp.System;
 /// </summary>
 public class Server
 {
-    private Application Application { get; } = new();
+    public Server()
+    {
+        Application.ServiceScope.TaskService.ProgramCollection.CreateProgramByScriptContent = (filePath,content) =>
+        {
+            return new TSProgram(filePath, content);
+        };
+        Application.ServiceScope.TaskService.ProgramCollection.RunProgramByFilePathAndArgs = async (program,filePath, args) =>
+        {
+            var programInstance = program as TSProgram;
+            if(programInstance == null)
+            {
+                throw new ArgumentException();
+            }
+            using var context = new Context();
+            context.script_path = filePath;
+            context.args = args;
+            await programInstance.RunAsync(context);
+        };
+    }
 
-    private ApplicationConfig ApplicationConfig { get; } = new();
+    public Application Application { get; } = new();
+
+    public ApplicationConfig ApplicationConfig { get; } = new();
+
+    public database getDatabase()
+    {
+        return new(Application.Database);
+    }
+
+    public ServiceScope serviceScope => Application.ServiceScope;
+
+    public ioStorageService storageService => new(serviceScope.IOStorageService);
+
+    public TaskCompletionSource onDatabaseSetupCompleted => Application.OnDatabaseStepupCompleted;
+
+    public TaskCompletionSource onConfigCompleted => Application.OnConfigCompleted;
 
     public async Task start(int port)
     {
+        //UrlResponse.DefaultContentEncoding = "";
         ApplicationConfig.ServerPorts = [port];
         await Application.Start(ApplicationConfig);
     }
@@ -30,5 +68,90 @@ public class Server
     public void useStatic(string directory)
     {
         ApplicationConfig.StaticResourcePath = directory;
+    }
+}
+
+public class ioStorageService(IOStorageService target)
+{
+    /// <summary>
+    /// 封装对象
+    /// </summary>
+    public IOStorageService Target { get; } = target;
+
+    public async Task<FileInterface> importFile(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        var fileContentMD5 = Util.ComputeMD5HashByFilePath(filePath);
+        var fileMD5 = Util.ComputeMD5Hash(fileContentMD5 + fileName);
+        if (await Target.ContainsContent(fileContentMD5) == false)
+        {
+            using var fileStream = File.OpenRead(filePath);
+            await Target.ImportContent(fileStream);
+        }
+        FileInterface? result = null;
+        if (await Target.ContainsFile(fileMD5))
+        {
+            result = await Target.GetFile(fileMD5);
+        }
+        else
+        {
+            result = await Target.ImportFile(fileName, fileMD5, fileContentMD5, [], DateTime.MinValue);
+        }
+        return result;
+    }
+
+    public async Task<ContentInterface> importString(string value)
+    {
+        var contentMD5 = Util.ComputeMD5Hash(value);
+        Ref<ContentInterface> result = new(new());
+        if (await Target.TryGetContent(contentMD5, result) == false)
+        {
+            using var stream = new MemoryStream(Util.UTF8.GetBytes(value));
+            result.Value = await Target.ImportContent(stream);
+        }
+        return result.Value;
+    }
+
+    public async Task<bool> containsContentByMD5(string contentMD5)
+    {
+        return await Target.ContainsContent(contentMD5);
+    }
+
+    public async Task exportContentToFilePath(string contentMD5, string filePath)
+    {
+        using var fileStream = File.OpenWrite(filePath);
+        await Target.ExportContent(contentMD5, fileStream);
+    }
+
+    public string getContentArchivePath(string contentMD5)
+    {
+        return Target.GetContentArchivePath(contentMD5);
+    }
+
+    public async Task exportFileToFilePath(string fileMD5, string filePath)
+    {
+        var fileInterface = await Target.GetFile(fileMD5);
+        using var fileStream = File.OpenWrite(filePath);
+        await Target.ExportContent(fileInterface.FullContentMD5, fileStream);
+    }
+
+    public async Task<string> readContent(string contentMD5)
+    {
+        using var stream = new MemoryStream();
+        await Target.ExportContent(contentMD5, stream);
+        return Util.UTF8.GetString(stream.ToArray());
+    }
+
+    public async Task<FileInterface> getFileByID(Json fileID)
+    {
+        if (fileID.IsGuid)
+        {
+            return await Target.GetFile(fileID.AsGuid);
+        }
+        else if(fileID.IsString)
+        {
+            return await Target.GetFile(Guid.Parse(fileID.AsString));
+        }
+        throw new ArgumentException();
     }
 }

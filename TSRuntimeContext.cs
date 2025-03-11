@@ -1,5 +1,6 @@
 ﻿using Cangjie.Core.Runtime;
 using Cangjie.Owners;
+using Cangjie.TypeSharp.System;
 using TidyHPC.LiteJson;
 using RuntimeObject = Cangjie.Core.Runtime.RuntimeObject;
 
@@ -22,12 +23,15 @@ public class TSRuntimeContext : RuntimeContext<char>
 
     public bool IsSupportDefaultField { get; set; } = false;
 
-    public Json MountedVariableSpace { get; private set; } = Json.Null;
-
-    public void MountVariableSpace(Json value)
+    public Func<Json>? GetMountedVariableSpace { get;private set; }
+    
+    public void MountVariableSpace(Func<Json>? getMountedVariableSpace)
     {
-        IsSupportDefaultField = true;
-        MountedVariableSpace = value;
+        if (getMountedVariableSpace != null)
+        {
+            IsSupportDefaultField = true;
+            GetMountedVariableSpace = getMountedVariableSpace;
+        }
     }
 
     public override bool IsConditionTrue(RuntimeObject value)
@@ -80,18 +84,7 @@ public class TSRuntimeContext : RuntimeContext<char>
         {
             return jsonValue.IsNull || jsonValue.IsUndefined;
         }
-        else if (value.Value is string valueString) return Json.Undefined == valueString || valueString.Length == 0;
-        else if (value.Value is int valueInt) return valueInt == 0;
-        else if (value.Value is double valueDouble) return valueDouble == 0;
-        else if (value.Value is float valueFloat) return valueFloat == 0;
-        else if (value.Value is long valueLong) return valueLong == 0;
-        else if (value.Value is short valueShort) return valueShort == 0;
-        else if (value.Value is byte valueByte) return valueByte == 0;
-        else if (value.Value is sbyte valueSbyte) return valueSbyte == 0;
-        else if (value.Value is uint valueUint) return valueUint == 0;
-        else if (value.Value is ulong valueUlong) return valueUlong == 0;
-        else if (value.Value is ushort valueUshort) return valueUshort == 0;
-        else if (value.Value is decimal valueDecimal) return valueDecimal == 0;
+        else if (value.Value is string valueString) return Json.Undefined == valueString;
         else return false;
     }
 
@@ -123,7 +116,7 @@ public class TSRuntimeContext : RuntimeContext<char>
         {
             return true;
         }
-        if(IsSupportDefaultField && MountedVariableSpace.ContainsKey(key))
+        if(IsSupportDefaultField && GetMountedVariableSpace?.Invoke().ContainsKey(key)==true)
         {
             return true;
         }
@@ -148,7 +141,7 @@ public class TSRuntimeContext : RuntimeContext<char>
             return new()
             {
                 Type = typeof(Json),
-                Value = MountedVariableSpace[key]
+                Value = GetMountedVariableSpace!.Invoke()[key]
             };
         }
         return new()
@@ -171,14 +164,35 @@ public class TSRuntimeContext : RuntimeContext<char>
     {
         if (value is null) throw new NullReferenceException();
         var resultProperty = value.GetType().GetProperty("Result");
-        if (resultProperty == null) return null;
+        if (resultProperty == null) return value;
         return resultProperty.GetValue(value);
+    }
+
+    public override RuntimeObject GetObjectType(RuntimeObject value)
+    {
+        string typeString = "";
+        var jsonValue = new Json(value.Value);
+        if (jsonValue.IsString) typeString = "string";
+        else if (jsonValue.IsNumber) typeString = "number";
+        else if (jsonValue.IsBoolean) typeString = "boolean";
+        else if (jsonValue.IsNull) typeString = "null";
+        else if (jsonValue.IsUndefined) typeString = "undefined";
+        else if (jsonValue.IsArray) typeString = "object";
+        else if (jsonValue.IsObject) typeString = "object";
+        else typeString = "unknown";
+        return new()
+        {
+            Type = typeof(string),
+            Value = typeString
+        };
     }
 
     public override RuntimeContext<char> CatchClone()
     {
         var context = new TSRuntimeContext([]);
         CatchScope.CopyTo(context.CatchScope);
+        context.ContextObjects = ContextObjects;
+        context.MountVariableSpace(GetMountedVariableSpace);
         return context;
     }
 
@@ -216,6 +230,8 @@ public class TSRuntimeContext : RuntimeContext<char>
                 throw new Exception("Catch fields not found.");
             }
         }
+        context.ContextObjects = ContextObjects;
+        context.MountVariableSpace(GetMountedVariableSpace);
         return context;
     }
 }

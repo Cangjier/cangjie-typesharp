@@ -12,16 +12,19 @@ namespace Cangjie.TypeSharp.System;
 /// <summary>
 /// 模拟axios
 /// </summary>
-public class axios
+public class Axios:IDisposable
 {
-    static axios()
+    public Axios(Context context)
     {
+        this.context = context;
         HttpClient.Timeout = TimeSpan.FromDays(8);
     }
 
-    private static HttpClient HttpClient { get; set; } = new HttpClient();
+    private Context context { get; }
 
-    public static void setProxy(string proxy)
+    private HttpClient HttpClient { get; set; } = new HttpClient();
+
+    public void setProxy(string proxy)
     {
         HttpClient.Dispose();
         HttpClient = new HttpClient(new HttpClientHandler()
@@ -31,14 +34,14 @@ public class axios
         HttpClient.Timeout = TimeSpan.FromDays(8);
     }
 
-    public static void unsetProxy()
+    public void unsetProxy()
     {
         HttpClient.Dispose();
         HttpClient = new HttpClient();
         HttpClient.Timeout = TimeSpan.FromDays(8);
     }
 
-    public static void setDefaultProxy()
+    public void setDefaultProxy()
     {
         var gitProxy = Util.GetGitProxy();
         if (string.IsNullOrEmpty(gitProxy)==false)
@@ -61,12 +64,12 @@ public class axios
 
     }
 
-    public static async Task<axiosResponse> get(string url)
+    public async Task<axiosResponse> get(string url)
     {
         return await get(url, null);
     }
 
-    public static async Task<axiosResponse> get(string url, axiosConfig? config)
+    public async Task<axiosResponse> get(string url, axiosConfig? config)
     {
         axiosResponse result = new();
         url = config?.getUrl(url) ?? url;
@@ -76,7 +79,7 @@ public class axios
         if (config?.useDefaultProxy == true)
         {
             response = await HttpClient.SendAsync(request);
-            await result.setResponse(response, config);
+            await result.setResponse(response, config,context);
         }
         else
         {
@@ -85,12 +88,12 @@ public class axios
                 Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
             });
             response = await client.SendAsync(request);
-            await result.setResponse(response, config);
+            await result.setResponse(response, config, context);
         }
         return result;
     }
 
-    public static async Task<axiosResponse> delete(string url, axiosConfig? config)
+    public async Task<axiosResponse> delete(string url, axiosConfig? config)
     {
         axiosResponse result = new();
         url = config?.getUrl(url) ?? url;
@@ -100,7 +103,7 @@ public class axios
         if (config?.useDefaultProxy == true)
         {
             response = await HttpClient.SendAsync(request);
-            await result.setResponse(response, config);
+            await result.setResponse(response, config, context);
         }
         else
         {
@@ -109,12 +112,12 @@ public class axios
                 Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
             });
             response = await client.SendAsync(request);
-            await result.setResponse(response, config);
+            await result.setResponse(response, config, context);
         }
         return result;
     }
 
-    public static async Task<axiosResponse> post(string url, Json data, axiosConfig? config)
+    public async Task<axiosResponse> post(string url, Json data, axiosConfig? config)
     {
         axiosResponse result = new();
         url = config?.getUrl(url) ?? url;
@@ -136,7 +139,7 @@ public class axios
         if (config?.useDefaultProxy == true)
         {
             response = await HttpClient.SendAsync(request);
-            await result.setResponse(response, config);
+            await result.setResponse(response, config, context);
         }
         else
         {
@@ -145,17 +148,17 @@ public class axios
                 Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
             });
             response = await client.SendAsync(request);
-            await result.setResponse(response, config);
+            await result.setResponse(response, config, context);
         }
         return result;
     }
 
-    public static async Task<axiosResponse> post(string url, Json data)
+    public async Task<axiosResponse> post(string url, Json data)
     {
         return await post(url, data, null);
     }
 
-    public static async Task<axiosResponse> put(string url, Json data, axiosConfig? config)
+    public async Task<axiosResponse> put(string url, Json data, axiosConfig? config)
     {
         axiosResponse result = new();
         url = config?.getUrl(url) ?? url;
@@ -173,7 +176,7 @@ public class axios
         if (config?.useDefaultProxy == true)
         {
             response = await HttpClient.SendAsync(request);
-            await result.setResponse(response, config);
+            await result.setResponse(response, config, context);
         }
         else
         {
@@ -182,17 +185,17 @@ public class axios
                 Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
             });
             response = await client.SendAsync(request);
-            await result.setResponse(response, config);
+            await result.setResponse(response, config, context);
         }
         return result;
     }
 
-    public static async Task<axiosResponse> put(string url, Json data)
+    public async Task<axiosResponse> put(string url, Json data)
     {
         return await put(url, data, null);
     }
 
-    public static async Task<axiosResponse> patch(string url, Json data, axiosConfig? config)
+    public async Task<axiosResponse> patch(string url, Json data, axiosConfig? config)
     {
         axiosResponse result = new();
         url = config?.getUrl(url) ?? url;
@@ -210,7 +213,7 @@ public class axios
         if (config?.useDefaultProxy == true)
         {
             response = await HttpClient.SendAsync(request);
-            await result.setResponse(response, config);
+            await result.setResponse(response, config, context);
         }
         else
         {
@@ -219,17 +222,17 @@ public class axios
                 Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
             });
             response = await client.SendAsync(request);
-            await result.setResponse(response, config);
+            await result.setResponse(response, config, context);
         }
         return result;
     }
 
-    public static async Task<axiosResponse> patch(string url, Json data)
+    public async Task<axiosResponse> patch(string url, Json data)
     {
         return await patch(url, data, null);
     }
 
-    public static async Task<string> download(string url)
+    public async Task<string> download(string url)
     {
         return await download(url, fileName =>
         {
@@ -244,12 +247,12 @@ public class axios
         });
     }
 
-    public static async Task<string> download(string url,string path)
+    public async Task<string> download(string url,string path)
     {
         return await download(url, fileName => path);
     }
 
-    public static async Task<string> download(string url, Func<string?, string> onPath)
+    public async Task<string> download(string url, Func<string?, string> onPath)
     {
         return await download(url, onPath, (current, total) =>
         {
@@ -257,10 +260,9 @@ public class axios
         });
     }
 
-    public static async Task<string> download(string url,Func<string?, string> onPath,Action<long, long?> onProgress)
+    public async Task<string> download(string url,Func<string?, string> onPath,Action<long, long?> onProgress)
     {
-        using var httpClient = new HttpClient();
-        var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+        var response = await HttpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
 
         var contentLength = response.Content.Headers.ContentLength;
@@ -305,6 +307,12 @@ public class axios
 
         return path;
     }
+
+    public void Dispose()
+    {
+        HttpClient?.Dispose();
+        HttpClient = null!;
+    }
 }
 
 public class axiosResponse
@@ -320,7 +328,7 @@ public class axiosResponse
 
     public string statusText { get; set; } = "";
 
-    public async Task setResponse(HttpResponseMessage response,axiosConfig? config)
+    public async Task setResponse(HttpResponseMessage response,axiosConfig? config,Context context)
     {
         status = (int)response.StatusCode;
         statusText = response.ReasonPhrase ?? string.Empty;
@@ -335,23 +343,32 @@ public class axiosResponse
             {
                 headers.Add(item.Key, item.Value.Join(","));
             }
-            if (config == null)
+            if (config == null || config.responseType == "")
             {
                 var content = await response.GetResponseContentAsync();
                 try
                 {
-                    data = Json.Parse(content);
+                    if (headers.ContainsKey("Content-Type"))
+                    {
+                        var contentType = headers["Content-Type"];
+                        if (contentType.Contains("application/json"))
+                        {
+                            data = Json.Parse(content);
+                        }
+                        else
+                        {
+                            data = content;
+                        }
+                    }
+                    else
+                    {
+                        data = content;
+                    }
                 }
                 catch
                 {
-                    Logger.ErrorLinear("axiosResponse.setResponse");
-                    foreach (var item in response.Content.Headers)
-                    {
-                        Logger.ErrorParameter(item.Key, item.Value.Join(","));
-                    }
-                    Logger.ErrorParameter($"content", content);
-                    Logger.ErrorLinear("");
-                    throw;
+                    data = content;
+                    context.console.error(ToString());
                 }
             }
             else if (config.responseType == "json")
@@ -363,7 +380,8 @@ public class axiosResponse
                 }
                 catch
                 {
-                    Logger.ErrorParameter($"content", content);
+                    data = content;
+                    context.console.error(ToString());
                     throw;
                 }
             }
@@ -380,6 +398,11 @@ public class axiosResponse
                 data = await response.Content.ReadAsByteArrayAsync();
             }
         }
+    }
+
+    public override string ToString()
+    {
+        return new Json(this).ToString();
     }
 }
 
@@ -416,7 +439,7 @@ public class axiosConfig
 
     public Dictionary<string, string> @params = [];
 
-    public string responseType = "json";
+    public string responseType = "";
 
     public bool debug = false;
 
@@ -437,23 +460,6 @@ public class axiosConfig
                 request.Content?.Headers.TryAddWithoutValidation(key, value);
             }
         }
-        if (debug)
-        {
-            console.log(request.Method);
-            console.log(request.RequestUri);
-            foreach (var header in request.Headers)
-            {
-                console.log($"{header.Key}:{header.Value.Join(",")}");
-            }
-            if (request.Content!=null)
-            {
-                foreach (var header in request.Content.Headers)
-                {
-                    console.log($"{header.Key}:{header.Value.Join(",")}");
-                }
-            }
-        }
-        
     }
 
     public string getUrl(string url)

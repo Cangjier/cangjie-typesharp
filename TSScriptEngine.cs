@@ -7,8 +7,24 @@ using Cangjie.Dawn.Text.Units.String;
 using TidyHPC.LiteJson;
 using Cangjie.TypeSharp.Steper;
 using Cangjie.Core.NativeOperatorMethods;
+using System.Diagnostics;
+using TidyHPC.Loggers;
+using Cangjie.TypeSharp.System;
+using Cangjie.Core.Steper;
+using System.Reflection;
+using Cangjie.Core.Exceptions;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using System.Xml.Linq;
+using Cangjie.Core;
 
 namespace Cangjie.TypeSharp;
+
+/// <summary>
+/// 
+/// </summary>
+/// <param name="FilePath"></param>
+/// <param name="FileContent"></param>
+public record TSScriptFile(string FilePath,string FileContent);
 public class TSScriptEngine
 {
     static TSScriptEngine()
@@ -100,16 +116,29 @@ public class TSScriptEngine
                 if (@delegate != null)
                 {
                     var parameters = @delegate.Method.GetParameters();
-                    var inputTypes = args.Select(arg => arg.Node?.GetType()).ToArray();
-                    if (inputTypes.TryAssignTo(args.Select(item => item.Node).ToArray(), parameters, out var inputValues))
+                    var inputTypes = args.Select(arg => typeof(Json)).ToArray();
+                    if (inputTypes.TryAssignTo(args.Select(item => (object)item).ToArray(), parameters, out var inputValues))
                     {
-                        return new Json(@delegate.DynamicInvoke(inputValues));
+                        try
+                        {
+                            return new Json(@delegate.DynamicInvoke(inputValues));
+                        }
+                        catch(Exception e)
+                        {
+                            if(e.InnerException is RuntimeException<char> runtimeException)
+                            {
+                                throw new RuntimeException<char>(runtimeException);
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
                     }
                     else
                     {
                         throw new Exception($"The parameters of {name} is not match.");
                     }
-                    //return new Json(@delegate.DynamicInvoke([.. args.Select(arg => arg.Node)]));
                 }
                 else
                 {
@@ -134,7 +163,18 @@ public class TSScriptEngine
             }
             if (@delegate != null)
             {
-                return new Json(@delegate.DynamicInvoke([.. args.Select(arg => arg.Node)]));
+                var inputTypes = args.Select(arg => typeof(Json)).ToArray();
+                var methodInfo = @delegate.Method;
+                var inputValues = args.Select(item => (object)item).ToArray();
+                if (inputTypes.TryAssignTo(inputValues, methodInfo.GetParameters(), out var parameters))
+                {
+                    return new Json(@delegate.DynamicInvoke([.. parameters]));
+                    //return new Json(methodInfo.Invoke(instance, parameters));
+                }
+                else
+                {
+                    throw new Exception($"The parameters is not match.");
+                }
             }
             else
             {
@@ -165,6 +205,22 @@ public class TSScriptEngine
             if (from is Json fromJson) return Json.op_ImplicitTo(fromJson, toType);
             else return from;
         };
+        Json.ImplicitTo = (from, toType) =>
+        {
+            var fromType = from.Node?.GetType();
+            if (fromType == null || from.Node is null)
+            {
+                return from.Node;
+            }
+            else if (DelegateUtil.IsCanConvertDelegate(fromType, toType))
+            {
+                return DelegateUtil.ConvertDelegate(from.Node, fromType, toType);
+            }
+            else
+            {
+                return from.Node;
+            }
+        };
     }
 
     public static Template<char> Template { get; } = InitialTemplate(new());
@@ -182,9 +238,9 @@ public class TSScriptEngine
         return template;
     }
 
-    public static Json Run(string script,Action<TSStepContext>? onStepContext,Action<TSRuntimeContext>? onRuntimeContext)
+    public static Json Run(string script,Context context,Action<TSStepContext>? onStepContext,Action<TSRuntimeContext>? onRuntimeContext)
     {
-        Owner owner = new();
+        using Owner owner = new();
         TextDocument document = new(owner, script);
         TextContext textContext = new(owner, Template);
         textContext.Process(document);
@@ -195,6 +251,7 @@ public class TSScriptEngine
 #endif
 
         TSStepContext stepContext = new(owner);
+        stepContext.MountVariableSpace(context.getContext);
         onStepContext?.Invoke(stepContext);
         var parseResult = StepEngine.Parse(owner, stepContext, textContext.Root.Data, false);
         var steps = parseResult.Steps;
@@ -202,42 +259,69 @@ public class TSScriptEngine
         Console.WriteLine(Path.GetFullPath("steps.text"));
         File.WriteAllText($"steps.text", steps.ToString());
 #endif
-        TSRuntimeContext runtimeContext = new();
+        using TSRuntimeContext runtimeContext = new();
+        runtimeContext.MountVariableSpace(context.getContext);
+        runtimeContext.ContextObjects = new();
+        runtimeContext.AddContextObject(context);
         onRuntimeContext?.Invoke(runtimeContext);
         steps.Run(runtimeContext);
         var lastValue = runtimeContext.GetLastObject().Value;
-        owner.Release();
+        runtimeContext.ContextObjects.Clear();
         return new(lastValue);
     }
 
-    public static async Task<Json> RunAsync(string script, Action<TSStepContext>? onStepContext, Action<TSRuntimeContext>? onRuntimeContext)
+    public static async Task<Json> RunAsync(string filePath,string script, Context context, Action<TSStepContext>? onStepContext, Action<TSRuntimeContext>? onRuntimeContext)
     {
-        Owner owner = new();
-        TextDocument document = new(owner, script);
-        TextContext textContext = new(owner, Template);
-        textContext.Process(document);
-#if DEBUG
-        var root = textContext.Root.ToString();
-        Console.WriteLine(Path.GetFullPath("root.xml"));
-        File.WriteAllText("root.xml", root);
-#endif
+       return await RunAsyncWithFiles([new TSScriptFile(filePath, script)], context, onStepContext, onRuntimeContext);
+    }
+
+    public static async Task<Json> RunAsyncWithFiles(TSScriptFile[] files, Context context, Action<TSStepContext>? onStepContext, Action<TSRuntimeContext>? onRuntimeContext)
+    {
+        using Owner owner = new();
+        Stopwatch stopwatch = new();
+        stopwatch.Start();
+        List<TextDocument> documents = [];
         TSStepContext stepContext = new(owner);
+        stepContext.MountVariableSpace(context.getContext);
         onStepContext?.Invoke(stepContext);
-        var parseResult = StepEngine.Parse(owner, stepContext, textContext.Root.Data, false);
-        var steps = parseResult.Steps;
+        Steps<char> steps = new(owner);
+        foreach (var file in files)
+        {
+            TextDocument document = new(owner, file.FileContent);
+            document.FilePath = file.FilePath;
+            TextContext textContext = new(owner, Template);
+            textContext.Process(document);
+            stopwatch.Stop();
+            Logger.Info($"Text Analyse: {stopwatch.ElapsedMilliseconds}ms, {file.FilePath}");
+
 #if DEBUG
-        Console.WriteLine(Path.GetFullPath("steps.text"));
-        File.WriteAllText($"steps.text", steps.ToString());
+            var root = textContext.Root.ToString();
+            Console.WriteLine(Path.GetFullPath("root.xml"));
+            File.WriteAllText("root.xml", root);
 #endif
-        TSRuntimeContext runtimeContext = new();
+            stopwatch.Restart();
+            var parseResult = StepEngine.Parse(owner, stepContext, textContext.Root.Data, steps, false);
+            stopwatch.Stop();
+            Logger.Info($"Compile: {stopwatch.ElapsedMilliseconds}ms");
+#if DEBUG
+            Console.WriteLine(Path.GetFullPath("steps.text"));
+            File.WriteAllText($"steps.text", steps.ToString());
+#endif
+        }
+
+        using TSRuntimeContext runtimeContext = new();
+        runtimeContext.MountVariableSpace(context.getContext);
+        runtimeContext.ContextObjects = new();
+        runtimeContext.AddContextObject(context);
         onRuntimeContext?.Invoke(runtimeContext);
         await steps.RunAsync(runtimeContext);
         var lastValue = runtimeContext.GetLastObject().Value;
-        owner.Release();
+        runtimeContext.ContextObjects.Clear();
         return new(lastValue);
     }
 
-    public static Json Run(string script) => Run(script, null, null);
+    public static Json Run(string script, Context context) => Run(script,context, null, null);
 
-    public static async Task<Json> RunAsync(string script) => await RunAsync(script, null, null);
+    public static async Task<Json> RunAsync(string filePath, string script, Context context) => await RunAsync(filePath, script, context, null, null);
+
 }

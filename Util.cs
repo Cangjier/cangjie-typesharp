@@ -2,6 +2,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using TidyHPC.Extensions;
 using TidyHPC.LiteJson;
 
 namespace Cangjie.TypeSharp;
@@ -9,16 +10,16 @@ public class Util
 {
     public static Encoding UTF8 { get; } = new UTF8Encoding(false);
 
-    public static Json EvalString(string script)
+    public static Json EvalString(string script,Context context)
     {
-        return TSScriptEngine.Run(script);
+        return TSScriptEngine.Run(script, context);
     }
 
-    public static string TryEvalString(string script)
+    public static string TryEvalString(string script,Context context)
     {
         if(script.StartsWith("$"))
         {
-            return EvalString(script[1..]).ToString();
+            return EvalString(script[1..], context).ToString();
         }
         return script;
     }
@@ -134,6 +135,12 @@ public class Util
         }
     }
 
+    public static string ComputeMD5HashByFilePath(string filePath)
+    {
+        using FileStream stream = new(filePath, FileMode.Open);
+        return ComputeMD5Hash(stream);
+    }
+
     public static string ComputeBase64(string rawData)
     {
         return Convert.ToBase64String(UTF8.GetBytes(rawData));
@@ -173,7 +180,7 @@ public class Util
 
     public static string GetGitProxy()
     {
-        return context.cmd(Environment.CurrentDirectory, "git config --global http.proxy").output;
+        return staticContext.cmd(Environment.CurrentDirectory, "git config --global http.proxy").output;
     }
 
     public static string GetSystemProxy()
@@ -183,5 +190,29 @@ public class Util
             return webProxy.ToString();
         }
         return "";
+    }
+
+    public static string GetRawUrl(string url)
+    {
+        //将github地址转换为raw地址，例如：
+        //https://github.com/Cangjier/type-sharp/blob/main/cli/create-react-component/main.ts
+        //https://raw.githubusercontent.com/Cangjier/type-sharp/main/cli/create-react-component/main.ts
+        if (url.StartsWith("https://github.com/") || url.Contains("/blob/"))
+        {
+            var uri = new Uri(url);
+            var path = uri.AbsolutePath;
+            var segments = path.Split('/');
+            return $"https://raw.githubusercontent.com/{segments.Skip(1).Where(item => item != "blob").Join("/")}";
+        }
+        return url;
+    }
+
+    public static HttpClient HttpClient { get; } = new();
+
+    public static async Task<string> HttpGetAsString(string url)
+    {
+        var response = await HttpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
     }
 }
