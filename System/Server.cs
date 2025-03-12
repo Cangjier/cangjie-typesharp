@@ -13,14 +13,13 @@ public class Server
 {
     public Server()
     {
-        Application.ServiceScope.TaskService.ProgramCollection.CreateProgramByScriptContent = (filePath,content) =>
+        Application.ServiceScope.TaskService.ProgramCollection.CreateProgramByScriptContent = (filePath, content) =>
         {
             return new TSProgram(filePath, content);
         };
-        Application.ServiceScope.TaskService.ProgramCollection.RunProgramByFilePathAndArgs = async (program,filePath, args) =>
+        Application.ServiceScope.TaskService.ProgramCollection.RunProgramByFilePathAndArgs = async (program, filePath, args) =>
         {
-            var programInstance = program as TSProgram;
-            if(programInstance == null)
+            if (program is not TSProgram programInstance)
             {
                 throw new ArgumentException();
             }
@@ -60,9 +59,9 @@ public class Server
     /// </summary>
     /// <param name="pattern"></param>
     /// <param name="delegate"></param>
-    public void use(string pattern,Delegate @delegate)
+    public void use(string pattern, Delegate @delegate)
     {
-        Application.Register(pattern,@delegate);
+        Application.Register(pattern, @delegate);
     }
 
     public void useStatic(string directory)
@@ -148,7 +147,7 @@ public class ioStorageService(IOStorageService target)
         {
             return await Target.GetFile(fileID.AsGuid);
         }
-        else if(fileID.IsString)
+        else if (fileID.IsString)
         {
             return await Target.GetFile(Guid.Parse(fileID.AsString));
         }

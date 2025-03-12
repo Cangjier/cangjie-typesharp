@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -11,12 +11,15 @@
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
     <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="Cangjie" Version="*" />
+    <PackageReference Include="VizGroup" Version="*" />
+    <PackageReference Include="TidyHPC" Version="*" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Github_VizGroup\VizGroup.csproj" />
+    <ProjectReference Include="..\viz-group-service\VizGroup.csproj" />
     <ProjectReference Include="..\cangjie\Cangjie.csproj" />
-    <ProjectReference Include="..\TidyHPC\TidyHPC.csproj" />
+    <ProjectReference Include="..\tidy-hpc\TidyHPC.csproj" />
   </ItemGroup>
 
 </Project>
