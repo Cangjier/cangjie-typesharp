@@ -10,27 +10,11 @@ namespace Cangjie.TypeSharp.System;
 
 public class netUtils
 {
-    public static async Task<int> pingAsync(string url, pingConfig? config = null)
+    private static async Task<int> pingAsync(HttpClient httpClient, string url, pingConfig? config = null)
     {
         int retryCount = config?.count ?? 1;
-        int[] result = new int[retryCount];
-        WebProxy? proxy = null;
-        if (config?.proxy != null)
-        {
-            var uri = new Uri(config.proxy);
-            proxy = new WebProxy { Address = uri };
-        }
         int timeout = config?.timeout ?? 5000;
-
-        // 创建HttpClientHandler并设置代理1  
-        using var httpClientHandler = new HttpClientHandler
-        {
-            Proxy = proxy,
-            UseProxy = true,
-        };
-
-        // 创建HttpClient并使用代理1  
-        using var httpClient = new HttpClient(httpClientHandler);
+        int[] result = new int[retryCount];
         List<Task> tasks = [];
         for (int i = 0; i < retryCount; i++)
         {
@@ -66,12 +50,83 @@ public class netUtils
         }
     }
 
-    public static async Task<int[]> pingsAsync(string[] urls, pingConfig? config = null)
+    public static async Task<int> pingAsync(string url, pingConfig? config = null)
     {
+        WebProxy? proxy = null;
+        if (config?.proxy != null)
+        {
+            var uri = new Uri(config.proxy);
+            proxy = new WebProxy { Address = uri };
+        }
+        // 创建HttpClientHandler并设置代理1  
+        using var httpClientHandler = new HttpClientHandler
+        {
+            Proxy = proxy,
+            UseProxy = true,
+        };
+
+        // 创建HttpClient并使用代理1  
+        using var httpClient = new HttpClient(httpClientHandler);
+        return await pingAsync(httpClient, url, config);
+    }
+
+    public static async Task<int[]> pingsAsync(string[] urls, pingConfig[] configs)
+    {
+        return await pingsWithConfigsAsync(urls, configs);
+    }
+
+    public static async Task<int> pingsWithConfigAsync(string[] urls, pingConfig? config = null)
+    {
+        WebProxy? proxy = null;
+        if (config?.proxy != null)
+        {
+            var uri = new Uri(config.proxy);
+            proxy = new WebProxy { Address = uri };
+        }
+        // 创建HttpClientHandler并设置代理1  
+        using var httpClientHandler = new HttpClientHandler
+        {
+            Proxy = proxy,
+            UseProxy = true,
+        };
+
+        // 创建HttpClient并使用代理1  
+        using var httpClient = new HttpClient(httpClientHandler);
+
         List<Task<int>> tasks = [];
         foreach (var url in urls)
         {
+            tasks.Add(pingAsync(httpClient, url, config));
+        }
+        var pingsResult = await Task.WhenAll(tasks);
+        // 如果全是-1，则返回-1
+        if (pingsResult.All(x => x == -1))
+        {
+            return -1;
+        }
+        else
+        {
+            // 否则返回非-1的平均值
+            return (int)pingsResult.Where(x => x != -1).Average();
+        }
+    }
+
+    public static async Task<int[]> pingWithConfigsAsync(string url, pingConfig[] configs)
+    {
+        List<Task<int>> tasks = [];
+        foreach (var config in configs)
+        {
             tasks.Add(pingAsync(url, config));
+        }
+        return await Task.WhenAll(tasks);
+    }
+
+    public static async Task<int[]> pingsWithConfigsAsync(string[] urls, pingConfig[] configs)
+    {
+        List<Task<int>> tasks = [];
+        foreach (var config in configs)
+        {
+            tasks.Add(pingsWithConfigAsync(urls, config));
         }
         return await Task.WhenAll(tasks);
     }
