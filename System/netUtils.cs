@@ -45,11 +45,11 @@ public class netUtils
                     using var response = await httpClient.GetAsync(url, cancellationTokenSource.Token);
                     _ = await response.Content.ReadAsByteArrayAsync();
                     stopwatch.Stop();
-                    result[i] = (int)stopwatch.ElapsedMilliseconds;
+                    result[innerI] = (int)stopwatch.ElapsedMilliseconds;
                 }
                 catch
                 {
-                    result[i] = -1;
+                    result[innerI] = -1;
                 }
             }));
         }
@@ -64,6 +64,16 @@ public class netUtils
             // 否则返回非-1的平均值
             return (int)result.Where(x => x != -1).Average();
         }
+    }
+
+    public static async Task<int[]> pingsAsync(string[] urls, pingConfig? config = null)
+    {
+        List<Task<int>> tasks = [];
+        foreach (var url in urls)
+        {
+            tasks.Add(pingAsync(url, config));
+        }
+        return await Task.WhenAll(tasks);
     }
 }
 
