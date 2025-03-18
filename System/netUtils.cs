@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using TidyHPC.LiteJson;
 
@@ -129,6 +130,34 @@ public class netUtils
             tasks.Add(pingsWithConfigAsync(urls, config));
         }
         return await Task.WhenAll(tasks);
+    }
+
+    public static int[] getAvailableTcpPorts(int count)
+    {
+        var ports = new List<int>();
+        var listeners = new List<TcpListener>();
+
+        try
+        {
+            for (int i = 0; i < count; i++)
+            {
+                var listener = new TcpListener(IPAddress.Loopback, 0);
+                listener.Start();
+                int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+                ports.Add(port);
+                listeners.Add(listener);
+            }
+        }
+        finally
+        {
+            // Ensure all listeners are stopped to release the ports
+            foreach (var listener in listeners)
+            {
+                listener.Stop();
+            }
+        }
+
+        return [.. ports];
     }
 }
 
