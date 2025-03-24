@@ -1,3 +1,5 @@
+using TidyHPC.Loggers;
+
 namespace Cangjie.TypeSharp.System;
 /// <summary>
 /// AgentApplication class
