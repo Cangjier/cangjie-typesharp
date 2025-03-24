@@ -18,6 +18,7 @@ public class CommonCommands
         try
         {
             using Context context = new();
+            Logger.SetLoggerFile(context.Logger);
             context.args = fullArgs![2..];
             if (File.Exists(path))
             {
