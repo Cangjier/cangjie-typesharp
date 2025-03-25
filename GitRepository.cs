@@ -15,7 +15,12 @@ public class GitRepository
         {
             if (string.IsNullOrEmpty(_gitRepositoryDirectory))
             {
-                _gitRepositoryDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $"{ApplicationName}/repository");
+                _gitRepositoryDirectory = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) ??
+                    Environment.GetEnvironmentVariable("home") ??
+                    Environment.GetEnvironmentVariable("HOME") ??
+                    throw new NullReferenceException("No home varible"),
+                    $"{ApplicationName}/repository");
             }
             return _gitRepositoryDirectory;
         }
