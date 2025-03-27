@@ -172,7 +172,7 @@ public class ArchiveFile(Archive archive, ZipArchiveEntry zipArchiveEntry, strin
     /// 写入流数据
     /// </summary>
     /// <param name="stream">要写入的流</param>
-    public void Write(Stream stream)
+    public void WriteStream(Stream stream)
     {
         using var entryStream = ZipArchiveEntry.Open();
         stream.CopyTo(entryStream);
@@ -183,24 +183,24 @@ public class ArchiveFile(Archive archive, ZipArchiveEntry zipArchiveEntry, strin
     /// 写入字符串内容
     /// </summary>
     /// <param name="content">要写入的字符串</param>
-    public void Write(string content)
+    public void WriteString(string content)
     {
         using var stream = new MemoryStream();
         using var writer = new StreamWriter(stream);
         writer.Write(content);
         writer.Flush();
         stream.Position = 0;
-        Write(stream);
+        WriteStream(stream);
     }
 
     /// <summary>
     /// 写入字节数组
     /// </summary>
     /// <param name="buffer">要写入的字节数组</param>
-    public void Write(byte[] buffer)
+    public void WriteBytes(byte[] buffer)
     {
         using var stream = new MemoryStream(buffer);
-        Write(stream);
+        WriteStream(stream);
     }
 
     /// <summary>
