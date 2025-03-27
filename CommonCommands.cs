@@ -116,5 +116,21 @@ public class CommonCommands
             Console.WriteLine($"{index++,3}/{count,-3}{item}");
         }
     }
+
+
+    /// <summary>
+    /// 获取当前执行文件的路径
+    /// </summary>
+    /// <returns></returns>
+    public static async Task Where()
+    {
+        await Task.CompletedTask;
+        Logger.Info($"process path: {Environment.ProcessPath}");
+        Logger.Info($"current directory: {Environment.CurrentDirectory}");
+        Logger.Info($"application data: {Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}");
+        Logger.Info($"local application data: {Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}");
+        Logger.Info($"program files: {Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)}");
+        Logger.Info($"program files x86: {Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}");
+    }
     
 }
