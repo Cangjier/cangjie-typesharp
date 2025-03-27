@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using TidyHPC.Extensions;
 
-namespace Cangjie.Typesharp.System;
+namespace Cangjie.TypeSharp.System;
 
 /// <summary>
 /// ArchiveDirectory

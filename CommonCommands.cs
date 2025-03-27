@@ -1,4 +1,5 @@
 ﻿using Cangjie.Core.Exceptions;
+using Cangjie.TypeSharp.Cli;
 using Cangjie.TypeSharp.System;
 using TidyHPC.Extensions;
 using TidyHPC.Loggers;
