@@ -5,7 +5,8 @@ using TidyHPC.Loggers;
 using TidyHPC.Routers;
 using TidyHPC.Routers.Args;
 
-namespace Cangjie.TypeSharp.Cli;
+namespace Cangjie.TypeSharp.System;
+
 public class CommonCommands
 {
     public static async Task Run(
