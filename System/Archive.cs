@@ -240,9 +240,11 @@ public class ArchiveFile(Archive archive, ZipArchiveEntry zipArchiveEntry, strin
 /// </summary>
 /// <param name="zipArchive"></param>
 /// <param name="filePath"></param>
-public class Archive(ZipArchive zipArchive, string filePath, bool canBeDisposed = false) : IDisposable
+public class Archive(ZipArchive zipArchive, string filePath, bool canBeDisposed = false, IDisposable[]? disposables = null) : IDisposable
 {
     public static Encoding DefaultEncoding { get; } = new UTF8Encoding(false);
+
+    private IDisposable[] Disposables { get; } = disposables ?? [];
 
     /// <summary>
     /// ZipArchive
@@ -265,15 +267,18 @@ public class Archive(ZipArchive zipArchive, string filePath, bool canBeDisposed 
     {
         // 如果filePath不存在，则创建ziparchive
         ZipArchive zipArchive;
+        IDisposable[] disposables = [];
         if (!File.Exists(filePath))
         {
-            zipArchive = ZipFile.Open(filePath, ZipArchiveMode.Create);
+            var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite);
+            zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Update, true);
+            disposables = [fileStream];
         }
         else
         {
             zipArchive = ZipFile.Open(filePath, ZipArchiveMode.Update);
         }
-        return new Archive(zipArchive, filePath, true);
+        return new Archive(zipArchive, filePath, true, disposables);
     }
 
     /// <summary>
@@ -285,6 +290,7 @@ public class Archive(ZipArchive zipArchive, string filePath, bool canBeDisposed 
         {
             ZipArchive.Dispose();
         }
+        Disposables.Foreach(disposable => disposable.Dispose());
     }
 
     /// <summary>
