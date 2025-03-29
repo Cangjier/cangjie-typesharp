@@ -17,9 +17,9 @@ public class CommonCommands
     [ArgsAliases("--use-update")]string? useUpdate = null,
     [Args] string[]? fullArgs = null)
     {
+        using Context context = new();
         try
         {
-            using Context context = new();
             Logger.SetLoggerFile(context.Logger);
             context.args = fullArgs![2..];
             if (File.Exists(path))
