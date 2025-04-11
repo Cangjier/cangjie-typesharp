@@ -8,7 +8,7 @@ public struct JsonWrapper
 {
     public JsonWrapper(object? value)
     {
-        if(value is Json jsonValue)
+        if (value is Json jsonValue)
         {
             Target = jsonValue;
         }
@@ -65,7 +65,7 @@ public struct JsonWrapper
     public int findIndex(Func<Json, Json> onItem)
     {
         int index = -1;
-        foreach(var item in Target.GetArrayEnumerable())
+        foreach (var item in Target.GetArrayEnumerable())
         {
             index++;
             var itemResult = onItem(item);
@@ -231,7 +231,7 @@ public struct JsonWrapper
     public string toUpperCase()
     {
         if (Target.IsString) return Target.AsString.ToUpper();
-        else if(Target.Is<char>())return Target.As<char>().ToString().ToUpper();
+        else if (Target.Is<char>()) return Target.As<char>().ToString().ToUpper();
         else throw new InvalidOperationException("JsonWrapper: toUpperCase only support string type");
     }
 
@@ -261,7 +261,7 @@ public struct JsonWrapper
 
     public string trimStart(Json value)
     {
-        if(value.IsString) return Target.AsString.TrimStart(value.AsString.ToArray());
+        if (value.IsString) return Target.AsString.TrimStart(value.AsString.ToArray());
         else throw new InvalidOperationException("JsonWrapper: trimStart only support string type");
     }
 
@@ -301,8 +301,39 @@ public struct JsonWrapper
         }
     }
 
+    public Json sort()
+    {
+        if (Target.IsArray)
+        {
+            Target.Sort((a, b) =>
+            {
+                if (a.IsString && b.IsString)
+                {
+                    return string.Compare(a.AsString, b.AsString);
+                }
+                else if (a.IsNumber && b.IsNumber)
+                {
+                    return a.AsNumber.CompareTo(b.AsNumber);
+                }
+                else
+                {
+                    return 0;
+                }
+            });
+            return Target;
+        }
+        else
+        {
+            throw new InvalidOperationException("JsonWrapper: sort only support array type");
+        }
+    }
+
     public Json splice(int start, int deleteCount, params Json[] items)
     {
+        if (start < 0)
+        {
+            start = Target.Count + start;
+        }
         if (Target.IsArray)
         {
             return Target.Splice(start, deleteCount, items);
@@ -317,6 +348,10 @@ public struct JsonWrapper
 
     public Json slice(int start, int end)
     {
+        if (start < 0)
+        {
+            start = Target.Count + start;
+        }
         if (Target.IsArray)
         {
             return Target.Slice(start, end);
@@ -427,7 +462,7 @@ public struct JsonWrapper
 
     public Json unshift(params Json[] items)
     {
-        for(int i = items.Length - 1; i >= 0; i--)
+        for (int i = items.Length - 1; i >= 0; i--)
         {
             Target.Insert(0, items[i]);
         }
@@ -585,7 +620,7 @@ public struct JsonWrapper
 
     public Json match(Json value)
     {
-        if (Target.IsString==false)
+        if (Target.IsString == false)
         {
             throw new InvalidOperationException("JsonWrapper: match only support string type");
         }

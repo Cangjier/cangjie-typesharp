@@ -27,7 +27,7 @@ public class ArchiveDirectory(Archive archive, ZipArchiveEntry? zipArchiveEntry,
     /// 获取文件路径
     /// </summary>
     public string FilePath { get; } = filePath;
-    
+
     /// <summary>
     /// 判断目标文件/目录是否存在
     /// </summary>
@@ -94,7 +94,14 @@ public class ArchiveDirectory(Archive archive, ZipArchiveEntry? zipArchiveEntry,
         }
         else
         {
-            return Archive.GetOrCreateFileByPath(FilePath + "/" + fileName);
+            if (FilePath.EndsWith('/') == false)
+            {
+                return Archive.GetOrCreateFileByPath(FilePath + "/" + fileName);
+            }
+            else
+            {
+                return Archive.GetOrCreateFileByPath(FilePath + fileName);
+            }
         }
     }
 
@@ -115,7 +122,14 @@ public class ArchiveDirectory(Archive archive, ZipArchiveEntry? zipArchiveEntry,
         }
         else
         {
-            return Archive.GetOrCreateDirectoryByPath(FilePath + "/" + directoryName);
+            if (FilePath.EndsWith('/') == false)
+            {
+                return Archive.GetOrCreateDirectoryByPath(FilePath + "/" + directoryName);
+            }
+            else
+            {
+                return Archive.GetOrCreateDirectoryByPath(FilePath + directoryName);
+            }
         }
     }
 
@@ -175,6 +189,8 @@ public class ArchiveFile(Archive archive, ZipArchiveEntry zipArchiveEntry, strin
     public void WriteStream(Stream stream)
     {
         using var entryStream = ZipArchiveEntry.Open();
+        entryStream.SetLength(0);
+        entryStream.Position = 0;
         stream.CopyTo(entryStream);
         entryStream.Flush();
     }
@@ -237,28 +253,37 @@ public class ArchiveFile(Archive archive, ZipArchiveEntry zipArchiveEntry, strin
 
 /// <summary>
 /// <para>ZipArchive是面向entry list的，Archive是面向file/directory的</para>
-/// </summary>
-/// <param name="zipArchive"></param>
-/// <param name="filePath"></param>
-public class Archive(ZipArchive zipArchive, string filePath, bool canBeDisposed = false, IDisposable[]? disposables = null) : IDisposable
+/// </summary>  
+/// <param name="stream">流</param>
+/// <param name="zipArchive">ZipArchive</param>
+/// <param name="filePath">文件路径</param>
+/// <param name="canBeDisposed">是否可以释放</param>
+public class Archive : IDisposable
 {
     public static Encoding DefaultEncoding { get; } = new UTF8Encoding(false);
 
-    private IDisposable[] Disposables { get; } = disposables ?? [];
+    public Archive(FileStream stream, string filePath, bool canBeDisposed = false)
+    {
+        Stream = stream;
+        FilePath = filePath;
+        CanBeDisposed = canBeDisposed;
+        ZipArchive = new ZipArchive(stream, ZipArchiveMode.Update, true);
+    }
+    public FileStream Stream { get; }
 
     /// <summary>
     /// ZipArchive
     /// </summary>
-    public ZipArchive ZipArchive { get; } = zipArchive;
+    public ZipArchive ZipArchive { get; private set; }
     /// <summary>
     /// 文件路径
     /// </summary>
-    public string FilePath { get; } = filePath;
+    public string FilePath { get; }
 
     /// <summary>
     /// 是否可以释放
     /// </summary>
-    private bool CanBeDisposed { get; } = canBeDisposed;
+    private bool CanBeDisposed { get; }
 
     /// <summary>
     /// 打开一个zip文件
@@ -266,19 +291,8 @@ public class Archive(ZipArchive zipArchive, string filePath, bool canBeDisposed 
     public static Archive Open(string filePath)
     {
         // 如果filePath不存在，则创建ziparchive
-        ZipArchive zipArchive;
-        IDisposable[] disposables = [];
-        if (!File.Exists(filePath))
-        {
-            var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite);
-            zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Update, true);
-            disposables = [fileStream];
-        }
-        else
-        {
-            zipArchive = ZipFile.Open(filePath, ZipArchiveMode.Update);
-        }
-        return new Archive(zipArchive, filePath, true, disposables);
+        var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+        return new Archive(fileStream, filePath, true);
     }
 
     /// <summary>
@@ -289,8 +303,19 @@ public class Archive(ZipArchive zipArchive, string filePath, bool canBeDisposed 
         if (CanBeDisposed)
         {
             ZipArchive.Dispose();
+            Stream.Dispose();
         }
-        Disposables.Foreach(disposable => disposable.Dispose());
+    }
+
+    /// <summary>
+    /// 保存
+    /// </summary>
+    public void Save()
+    {
+        ZipArchive.Dispose();
+        Stream.Flush(true);
+        Stream.Position = 0;
+        ZipArchive = new ZipArchive(Stream, ZipArchiveMode.Update, true);
     }
 
     /// <summary>

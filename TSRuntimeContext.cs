@@ -178,6 +178,7 @@ public class TSRuntimeContext : RuntimeContext<char>
         else if (jsonValue.IsNull) typeString = "null";
         else if (jsonValue.IsUndefined) typeString = "undefined";
         else if (jsonValue.IsArray) typeString = "object";
+        else if (jsonValue.Node is Delegate) typeString = "function";
         else if (jsonValue.IsObject) typeString = "object";
         else typeString = "unknown";
         return new()
