@@ -23,7 +23,7 @@ public class TSStepEngine : StepParserEngine<char>
             .Add(JsonArrayStep.Parser.Instance, JsonObjectStep.Parser.Instance)
             .Add(ImportStep.Parser.Instance)
             .Add(LamdaStep.Parser.Instance)
-            .Add(IfStep.Parser.Instance, ForStep.Parser.Instance, ForeachStep.Parser.Instance, WhileStep.Parser.Instance, TryStep.Parser.Instance)
+            .Add(IfStep.Parser.Instance, ForStep.Parser.Instance, ForeachStep.Parser.Instance, WhileStep.Parser.Instance, TryStep.Parser.Instance,InterfaceStep.Parser.Instance)
             .Add(StatementStep.Parser.Instance);
         CreateRank().Add(WrapStep.Parser.Instance,DebuggerStep.Parser.Instance);
         CreateRank().Add(TypeStep.DotParser.Instance);

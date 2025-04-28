@@ -16,15 +16,17 @@ using Cangjie.Core.Exceptions;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using System.Xml.Linq;
 using Cangjie.Core;
+using Cangjie.Dawn.Text.Units;
+using System.Configuration;
 
 namespace Cangjie.TypeSharp;
 
-/// <summary>
-/// 
-/// </summary>
-/// <param name="FilePath"></param>
-/// <param name="FileContent"></param>
-public record TSScriptFile(string FilePath,string FileContent);
+
+public class TSScriptFileSystem
+{
+    public Func<string, Task<string>> GetFileContent { get; set; } = async (string file) => await File.ReadAllTextAsync(file, Util.UTF8);
+}
+
 public class TSScriptEngine
 {
     static TSScriptEngine()
@@ -272,35 +274,63 @@ public class TSScriptEngine
 
     public static async Task<Json> RunAsync(string filePath,string script, Context context, Action<TSStepContext>? onStepContext, Action<TSRuntimeContext>? onRuntimeContext)
     {
-       return await RunAsyncWithFiles([new TSScriptFile(filePath, script)], context, onStepContext, onRuntimeContext);
+        return await RunAsyncWithFiles(filePath, new TSScriptFileSystem(), context, onStepContext, onRuntimeContext);
     }
 
-    public static async Task<Json> RunAsyncWithFiles(TSScriptFile[] files, Context context, Action<TSStepContext>? onStepContext, Action<TSRuntimeContext>? onRuntimeContext)
+    public static async Task<Json> RunAsyncWithFiles(string filePath,TSScriptFileSystem fileSystem, Context context, Action<TSStepContext>? onStepContext, Action<TSRuntimeContext>? onRuntimeContext)
     {
         using Owner owner = new();
         Stopwatch stopwatch = new();
         stopwatch.Start();
         List<TextDocument> documents = [];
+        List<TextContext> textContexts = [];
+        HashSet<string> filePathSet = [];
         TSStepContext stepContext = new(owner);
         stepContext.MountVariableSpace(context.getContext);
         onStepContext?.Invoke(stepContext);
         Steps<char> steps = new(owner);
-        foreach (var file in files)
+        async Task loadFile(string filePath)
         {
-            TextDocument document = new(owner, file.FileContent);
-            document.FilePath = file.FilePath;
+            if(filePathSet.Contains(filePath.ToLower())) return;
+            if (File.Exists(filePath) == false)
+            {
+                Logger.Info($"File not found: {filePath}");
+                return;
+            }
+            var fileContent = await fileSystem.GetFileContent(filePath);
+            TextDocument document = new(owner, fileContent);
+            document.FilePath = filePath;
             TextContext textContext = new(owner, Template);
             textContext.Process(document);
             stopwatch.Stop();
-            Logger.Info($"Text Analyse: {stopwatch.ElapsedMilliseconds}ms, {file.FilePath}");
-
+            Logger.Info($"Text Analyse: {stopwatch.ElapsedMilliseconds}ms, {filePath}");
+            var imports = textContext.Root.Data.Where(item => item is Import).Select(item => (item as Import)!).ToArray();
+            foreach(var import in imports)
+            {
+                var from = import.From;
+                if (string.IsNullOrEmpty(from)) continue;
+                if (from.Contains(".tsc")) continue;
+                var fromFilePath = from;
+                if (fromFilePath.EndsWith(".ts") == false)
+                {
+                    fromFilePath += "/index.ts";
+                }
+                fromFilePath = Path.GetFullPath(fromFilePath, Path.GetDirectoryName(filePath) ?? throw new Exception("filePath is null"));
+                await loadFile(fromFilePath);
+            }
+            documents.Add(document);
+            textContexts.Add(textContext);
 #if DEBUG
             var root = textContext.Root.ToString();
             Console.WriteLine(Path.GetFullPath("root.xml"));
             File.WriteAllText("root.xml", root);
 #endif
+        }
+        await loadFile(filePath);
+        foreach (var textContext in textContexts)
+        {
             stopwatch.Restart();
-            var parseResult = StepEngine.Parse(owner, stepContext, textContext.Root.Data, steps, false);
+            StepEngine.Parse(owner, stepContext, textContext.Root.Data, steps, false);
             stopwatch.Stop();
             Logger.Info($"Compile: {stopwatch.ElapsedMilliseconds}ms");
 #if DEBUG

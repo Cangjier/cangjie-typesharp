@@ -352,13 +352,17 @@ public struct JsonWrapper
         {
             start = Target.Count + start;
         }
-        if (Target.IsArray)
+        if (end < 0)
+        {
+            end = Target.Count + end;
+        }
+        if (Target.IsArray || Target.IsString)
         {
             return Target.Slice(start, end);
         }
         else
         {
-            throw new InvalidOperationException("JsonWrapper: slice only support array type");
+            throw new InvalidOperationException("JsonWrapper: slice only support array or string type");
         }
     }
 
@@ -428,8 +432,9 @@ public struct JsonWrapper
 
     public Json pop()
     {
+        var last = Target[Target.Count - 1];
         Target.RemoveAt(Target.Count - 1);
-        return Target;
+        return last;
     }
 
     public Json shift()
