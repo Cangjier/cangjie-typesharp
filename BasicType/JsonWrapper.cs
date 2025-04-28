@@ -344,7 +344,7 @@ public struct JsonWrapper
         }
     }
 
-    public Json splice(int start) => splice(start, Target.Count - start);
+    public Json splice(int start) => splice(start, -1);
 
     public Json slice(int start, int end)
     {
