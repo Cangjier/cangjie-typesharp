@@ -35,6 +35,16 @@ public struct JsonWrapper
         return result;
     }
 
+    public List<object> map(Func<Json, Json , Json> onItem)
+    {
+        List<object> result = [];
+        Target.ForeachArray((index,item) =>
+        {
+            result.Add(onItem(item, index));
+        });
+        return result;
+    }
+
     public List<object?> filter(Func<Json, Json> onItem)
     {
         List<object?> result = [];
@@ -648,6 +658,15 @@ public struct JsonWrapper
             result.Add(item.Value);
         }
         return result;
+    }
+
+    public int localeCompare(Json other)
+    {
+        if (Target.IsString == false || other.IsString == false)
+        {
+            throw new InvalidOperationException("JsonWrapper: localeCompare only support string type");
+        }
+        return Target.AsString.CompareTo(other.AsString);
     }
 
     /// <summary>

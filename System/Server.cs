@@ -36,7 +36,7 @@ public class Server
 
     public database getDatabase()
     {
-        return new(Application.Database);
+        return new(Application.Database.Value);
     }
 
     public ServiceScope serviceScope => Application.ServiceScope;
