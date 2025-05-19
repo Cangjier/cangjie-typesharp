@@ -27,6 +27,7 @@ public class Server
             context.script_path = filePath;
             context.args = args;
             await programInstance.RunAsync(context);
+            await context.Logger.QueueLogger.WaitForEmpty();
         };
     }
 
