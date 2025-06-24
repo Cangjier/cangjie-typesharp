@@ -64,8 +64,8 @@ public class typescript
                 var keyEnd = keyUnits.Last().SourceRange.End?.Index ?? throw new Exception("keyEnd is null");
                 var valueStart = valueUnits.First().SourceRange.Start?.Index ?? throw new Exception("valueStart is null");
                 var valueEnd = valueUnits.Last().SourceRange.End?.Index ?? throw new Exception("valueEnd is null");
-                var key = document.GetRange(keyStart, keyEnd);
-                var value = document.GetRange(valueStart, valueEnd);
+                var key = document.GetRaw(keyStart, keyEnd);
+                var value = document.GetRaw(valueStart, valueEnd);
                 var valueTrim = value.Trim();
                 bool containsArray = valueUnits.Contains(unit => unit is Bracket arrayBracket && arrayBracket.Is("[", "]"));
                 bool containsObject = valueUnits.Contains(unit => unit is Bracket objectBracket && objectBracket.Is("{", "}"));
@@ -127,7 +127,7 @@ public class typescript
                 interfaceObject["name"] = @interface.InterfaceName;
                 interfaceObject["extends"] = @interface.ExtendsInterfaceName;
                 interfaceObject["isExport"] = @interface.IsExport;
-                interfaceObject["raw"] = document.GetRange(@interface.SourceRange.Start!.Value.Index, @interface.SourceRange.End!.Value.Index);
+                interfaceObject["raw"] = document.GetRaw(@interface.SourceRange.Start!.Value.Index, @interface.SourceRange.End!.Value.Index);
                 var properties = interfaceObject.GetOrCreateObject("properties");
                 var references = interfaceObject.GetOrCreateArray("references");
                 getAllProperties(@interface.Body.Data, properties, references);
