@@ -360,6 +360,15 @@ public static class staticContext
     {
         try
         {
+            File.Delete(sourcePath);
+            return;
+        }
+        catch
+        {
+
+        }
+        try
+        {
             var fi = new FileInfo(sourcePath);
             if ((fi.Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
             {
@@ -385,7 +394,35 @@ public static class staticContext
         {
             deleteFile(item);
         }
-        Directory.Delete(sourceDirectory, true);
+        try
+        {
+            Directory.Delete(sourceDirectory, true);
+        }
+        catch
+        {
+
+        }
+    }
+
+    public static void clearDirectory(string sourceDirectory)
+    {
+        if (!Directory.Exists(sourceDirectory))
+        {
+            Console.WriteLine("Source directory does not exist.");
+            return;
+        }
+        foreach (string item in Directory.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories))
+        {
+            deleteFile(item);
+        }
+        foreach (string item in Directory.GetDirectories(sourceDirectory, "*", SearchOption.AllDirectories))
+        {
+            if (Directory.Exists(item) == false)
+            {
+                continue;
+            }
+            deleteDirectory(item);
+        }
     }
 
     public static string locate(string searchDirectory, string path)
