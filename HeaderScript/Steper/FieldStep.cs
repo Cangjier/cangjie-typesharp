@@ -2,7 +2,7 @@
 using Cangjie.Core.Syntax;
 using Cangjie.Core.Steper;
 using Cangjie.Owners;
-using Cangjie.Dawn.Text.Units;
+using Cangjie.Dawn.Text.Tokens;
 using Cangjie.Core.Extensions;
 
 namespace  Cangjie.TypeSharp.Cli.HeaderScript.Steper;
@@ -28,7 +28,7 @@ public class FieldStep : Step<char>
 
         public override void Process(IOwner owner, StepParserEngine<char> engine, StepContext<char> context, Steps<char> steps, List<StepParserUnit<char>> units, ref StepParserUnitIndex index)
         {
-            var item = units[index].BaseAs<Block<char>>();
+            var item = units[index].BaseAs<BlockToken<char>>();
             var result = steps.Create<FieldStep>((step) =>
             {
                 step.Set(item.TempToString());

@@ -2,8 +2,8 @@ using Cangjie.Core.Extensions;
 using Cangjie.Core.Syntax;
 using Cangjie.Core.Syntax.Templates;
 using Cangjie.Dawn.Text;
-using Cangjie.Dawn.Text.Units;
-using Cangjie.Dawn.Text.Units.Interface;
+using Cangjie.Dawn.Text.Tokens;
+using Cangjie.Dawn.Text.Tokens.Interface;
 using Cangjie.Owners;
 using TidyHPC.LiteJson;
 
@@ -34,13 +34,13 @@ public class typescript
         TextContext textContext = new(owner, Template);
         textContext.Process(document);
         var root = textContext.Root;
-        void getAllProperties(List<Base<char>> units, Json properties, Json references)
+        void getAllProperties(List<Token<char>> units, Json properties, Json references)
         {
             bool isKey = true;
-            List<Base<char>> keyUnits = [];
-            List<Base<char>> valueUnits = [];
+            List<Token<char>> keyUnits = [];
+            List<Token<char>> valueUnits = [];
             bool isOptional = false;
-            void getReferences(List<Base<char>> units, Json references)
+            void getReferences(List<Token<char>> units, Json references)
             {
                 foreach (var unit in units)
                 {
@@ -80,7 +80,7 @@ public class typescript
                 valueUnits.Clear();
                 isOptional = false;
             }
-            void onUnit(Base<char> unit)
+            void onUnit(Token<char> unit)
             {
                 if (unit is LineAnnotation || unit is AreaAnnotation || unit is WrapSymbol)
                 {
@@ -119,7 +119,7 @@ public class typescript
                 completeProperty();
             }
         }
-        void onInterface(Base<char> unit)
+        void onInterface(Token<char> unit)
         {
             if (unit is Interface @interface)
             {

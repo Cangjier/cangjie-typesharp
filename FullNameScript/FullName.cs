@@ -1,6 +1,6 @@
 ﻿using Cangjie.Core.Exceptions;
 using Cangjie.Core.Syntax;
-using Cangjie.Dawn.Text.Units;
+using Cangjie.Dawn.Text.Tokens;
 using Cangjie.TypeSharp.CSharpTypeFullNameEngine;
 using TidyHPC.Extensions;
 
@@ -35,16 +35,16 @@ public class FullName
         KeyValueValue
     }
 
-    public static FullName Parse(IEnumerable<Base<char>> items)
+    public static FullName Parse(IEnumerable<Token<char>> items)
     {
         Flag flag = Flag.Namespace;// 0:namespace, 1:generic, 2:array, 3:assembly, 4:key-value/key , 5:key-value/value
-        List<Base<char>> namespaceWithTypeNameBases = [];
-        List<Base<char>> assemblyFullNameBases = [];
+        List<Token<char>> namespaceWithTypeNameBases = [];
+        List<Token<char>> assemblyFullNameBases = [];
         List<FullName> genericTypes = [];
-        List<Base<char>[]> keys = [];
-        List<Base<char>[]> values = [];
-        List<Base<char>> keyTemp = [];
-        List<Base<char>> valueTemp = [];
+        List<Token<char>[]> keys = [];
+        List<Token<char>[]> values = [];
+        List<Token<char>> keyTemp = [];
+        List<Token<char>> valueTemp = [];
         int genericArity = 0;
         bool isArray = false;
         int arrayRank = 0;
@@ -181,23 +181,23 @@ public class FullName
         {
             fullName.NameSpace = namespaceWithTypeNameBases.SkipLast(2).Join("", item =>
             {
-                if (item is Block<char> block) return block.TempToString();
+                if (item is BlockToken<char> block) return block.TempToString();
                 else throw new SyntaxException<char>(item.SourceRange);
             });
-            fullName.TypeName = namespaceWithTypeNameBases.Last() is Block<char> block ? 
+            fullName.TypeName = namespaceWithTypeNameBases.Last() is BlockToken<char> block ? 
                 block.TempToString() : 
                 throw new SyntaxException<char>(namespaceWithTypeNameBases.Last().SourceRange);
         }
         else
         {
             fullName.NameSpace = string.Empty;
-            fullName.TypeName = namespaceWithTypeNameBases.Last() is Block<char> block ?
+            fullName.TypeName = namespaceWithTypeNameBases.Last() is BlockToken<char> block ?
                 block.TempToString() :
                 throw new SyntaxException<char>(namespaceWithTypeNameBases.Last().SourceRange);
         }
         fullName.AssemblyFullName = assemblyFullNameBases.Join("", item =>
         {
-            if (item is Block<char> block) return block.TempToString();
+            if (item is BlockToken<char> block) return block.TempToString();
             else throw new SyntaxException<char>(item.SourceRange);
         });
         fullName.IsGeneric = genericTypes.Count > 0;
@@ -208,12 +208,12 @@ public class FullName
         {
             string key = keys[i].Join("", item =>
             {
-                if (item is Block<char> block) return block.TempToString();
+                if (item is BlockToken<char> block) return block.TempToString();
                 else throw new SyntaxException<char>(item.SourceRange);
             });
             string value = values[i].Join("", item =>
             {
-                if (item is Block<char> block) return block.TempToString();
+                if (item is BlockToken<char> block) return block.TempToString();
                 else throw new SyntaxException<char>(item.SourceRange);
             });
             fullName.Attributes.Add(key, value);

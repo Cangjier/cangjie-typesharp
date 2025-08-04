@@ -3,7 +3,7 @@ using Cangjie.Core.Runtime;
 using Cangjie.Core.Syntax.Templates;
 using Cangjie.Owners;
 using Cangjie.Dawn.Text;
-using Cangjie.Dawn.Text.Units.String;
+using Cangjie.Dawn.Text.Tokens.String;
 using TidyHPC.LiteJson;
 using Cangjie.TypeSharp.Steper;
 using Cangjie.Core.NativeOperatorMethods;
@@ -16,7 +16,7 @@ using Cangjie.Core.Exceptions;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using System.Xml.Linq;
 using Cangjie.Core;
-using Cangjie.Dawn.Text.Units;
+using Cangjie.Dawn.Text.Tokens;
 using System.Configuration;
 
 namespace Cangjie.TypeSharp;

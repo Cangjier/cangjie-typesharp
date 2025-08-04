@@ -1,9 +1,9 @@
 ﻿using Cangjie.Core.Syntax.Templates;
 using Cangjie.Dawn.Text;
-using Cangjie.Dawn.Text.Units;
-using Cangjie.Dawn.Text.Units.Json;
-using Cangjie.Dawn.Text.Units.Lamda;
-using Cangjie.Dawn.Text.Units.String;
+using Cangjie.Dawn.Text.Tokens;
+using Cangjie.Dawn.Text.Tokens.Json;
+using Cangjie.Dawn.Text.Tokens.Lamda;
+using Cangjie.Dawn.Text.Tokens.String;
 using Cangjie.Owners;
 using TidyHPC.LiteJson;
 
@@ -50,8 +50,8 @@ public class code
         TextDocument document = new(owner, script);
         TextContext textContext = new(owner, Template);
         textContext.Process(document);
-        var result = textContext.Root.ToJsonArry();
+        var result = textContext.Root.ToList();
         owner.Release();
-        return Json.Parse(result.ToJsonString());
+        return new Json(result);
     }
 }
