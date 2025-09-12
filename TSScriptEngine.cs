@@ -24,7 +24,9 @@ namespace Cangjie.TypeSharp;
 
 public class TSScriptFileSystem
 {
-    public Func<string, Task<string>> GetFileContent { get; set; } = async (string file) => await File.ReadAllTextAsync(file, Util.UTF8);
+    public Func<string, Task<string>> GetFileContentAsync { get; set; } = async (string file) => await File.ReadAllTextAsync(file, Util.UTF8);
+
+    public Func<string,string> GetFileContent { get; set; } = (string file) => File.ReadAllText(file, Util.UTF8);
 }
 
 public class TSScriptEngine
@@ -297,7 +299,7 @@ public class TSScriptEngine
                 Logger.Info($"File not found: {filePath}");
                 return;
             }
-            var fileContent = await fileSystem.GetFileContent(filePath);
+            var fileContent = await fileSystem.GetFileContentAsync(filePath);
             TextDocument document = new(owner, fileContent);
             document.FilePath = filePath;
             TextContext textContext = new(owner, Template);
