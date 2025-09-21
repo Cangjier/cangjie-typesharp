@@ -61,8 +61,16 @@ public static class staticContext
         }
         process.WaitForExit();
         var result = new processResult();
-        result.output = output.ToString();
-        result.error = error.ToString();
+        if (config.redirect)
+        {
+            result.output = output.ToString();
+            result.error = error.ToString();
+        }
+        else
+        {
+            result.output = process.StandardOutput.ReadToEnd();
+            result.error = process.StandardError.ReadToEnd();
+        }
         result.exitCode = process.ExitCode;
         return result;
     }
@@ -147,8 +155,17 @@ public static class staticContext
         }
         await process.WaitForExitAsync();
         var result = new processResult();
-        result.output = output.Join("\r\n");
-        result.error = error.Join("\r\n");
+        if (config.redirect)
+        {
+            result.output = output.Join("\r\n");
+            result.error = error.Join("\r\n");
+        }
+        else
+        {
+            result.output = await process.StandardOutput.ReadToEndAsync();
+            result.error = await process.StandardError.ReadToEndAsync();
+        }
+
         result.exitCode = process.ExitCode;
         return result;
     }
