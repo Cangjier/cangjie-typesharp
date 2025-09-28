@@ -61,4 +61,9 @@ public class processConfig
         get => Target.Get("environment", Json.Null);
         set => Target.Set("environment", value);
     }
+
+    public override string ToString()
+    {
+        return Target.ToString();
+    }
 }

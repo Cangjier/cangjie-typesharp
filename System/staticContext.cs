@@ -15,6 +15,7 @@ public static class staticContext
 
     public static processResult exec(processConfig config)
     {
+        Console.WriteLine($"exec {config}");
         var process = new Process();
         process.StartInfo.FileName = config.filePath;
         if (config.workingDirectory != string.Empty)
@@ -52,22 +53,26 @@ public static class staticContext
                 }
             };
         }
-
+        Console.WriteLine($"exec start");
         process.Start();
         if (config.redirect)
         {
+            Console.WriteLine($"exec BeginOutputReadLine");
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
         }
+        Console.WriteLine($"exec WaitForExit");
         process.WaitForExit();
         var result = new processResult();
         if (config.redirect)
         {
+            
             result.output = output.ToString();
             result.error = error.ToString();
         }
         else
         {
+            Console.WriteLine($"exec StandardOutput");
             result.output = process.StandardOutput.ReadToEnd();
             result.error = process.StandardError.ReadToEnd();
         }

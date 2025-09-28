@@ -652,12 +652,96 @@ public struct JsonWrapper
         {
             throw new InvalidOperationException("JsonWrapper: match only support string or regex type");
         }
-        var result = Json.NewArray();
-        foreach (Match item in regex.Matches(Target.AsString))
+        var match = regex.Match(Target.AsString);
+        var matchResult = Json.NewObject();
+        matchResult.Set("0", match.Value);
+        int index = 1;
+        foreach (Group group in match.Groups)
         {
-            result.Add(item.Value);
+            if (group.Success)
+            {
+                matchResult.Set(index.ToString(), group.Value);
+                index++;
+            }
         }
-        return result;
+        var groups = Json.NewObject();
+        foreach (Group group in match.Groups)
+        {
+            if (group.Success && !string.IsNullOrEmpty(group.Name) && group.Name != "0" && !int.TryParse(group.Name, out _))
+            {
+                groups.Set(group.Name, group.Value);
+            }
+        }
+        if (groups.Count > 0)
+        {
+            matchResult.Set("groups", groups);
+        }
+        return matchResult;
+    }
+
+    public bool test(Json value)
+    {
+        if (Target.Is<Regex>() == false)
+        {
+            throw new InvalidOperationException("JsonWrapper: test only support regex type");
+        }
+        Regex regex = Target.As<Regex>();
+        if (value.IsString)
+        {
+            return regex.IsMatch(value.AsString);
+        }
+        else if (value.Is<Regex>())
+        {
+            return regex.ToString() == value.As<Regex>().ToString();
+        }
+        else
+        {
+            throw new InvalidOperationException("JsonWrapper: test only support string or regex type");
+        }
+    }
+
+    public Json exec(Json value)
+    {
+        if (Target.Is<Regex>() == false)
+        {
+            throw new InvalidOperationException("JsonWrapper: exec only support regex type");
+        }
+        Regex regex = Target.As<Regex>();
+        if (value.IsString)
+        {
+            var match = regex.Match(value.AsString);
+            if (match.Success)
+            {
+                var result = Json.NewObject();
+                result.Set("0", match.Value);
+                int index = 1;
+                foreach (Group group in match.Groups)
+                {
+                    if (group.Success)
+                    {
+                        result.Set(index.ToString(), group.Value);
+                        index++;
+                    }
+                }
+                var groups = result.GetOrCreateObject("groups");
+                foreach (Group group in match.Groups)
+                {
+                    if (group.Success && !string.IsNullOrEmpty(group.Name) && group.Name != "0" && !int.TryParse(group.Name, out _))
+                    {
+                        groups.Set(group.Name, group.Value);
+                    }
+                }
+                return result;
+            }
+            else
+            {
+                return Json.Null;
+            }
+        }
+        else
+        {
+            throw new InvalidOperationException("JsonWrapper: exec only support string type");
+        }
     }
 
     public int localeCompare(Json other)
