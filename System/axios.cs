@@ -22,14 +22,18 @@ public class Axios:IDisposable
 
     private Context context { get; }
 
-    private HttpClient HttpClient { get; set; } = new HttpClient();
+    private HttpClient HttpClient { get; set; } = new HttpClient(new HttpClientHandler()
+    {
+        ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true
+    });
 
     public void setProxy(string proxy)
     {
         HttpClient.Dispose();
         HttpClient = new HttpClient(new HttpClientHandler()
         {
-            Proxy = new WebProxy(proxy)
+            Proxy = new WebProxy(proxy),
+            ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true
         });
         HttpClient.Timeout = TimeSpan.FromDays(8);
     }
@@ -37,7 +41,10 @@ public class Axios:IDisposable
     public void unsetProxy()
     {
         HttpClient.Dispose();
-        HttpClient = new HttpClient();
+        HttpClient = new HttpClient(new HttpClientHandler()
+        {
+            ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true
+        });
         HttpClient.Timeout = TimeSpan.FromDays(8);
     }
 
