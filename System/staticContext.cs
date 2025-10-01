@@ -15,7 +15,6 @@ public static class staticContext
 
     public static processResult exec(processConfig config)
     {
-        //Console.WriteLine($"exec {config}");
         var process = new Process();
         process.StartInfo.FileName = config.filePath;
         if (config.workingDirectory != string.Empty)
@@ -53,15 +52,12 @@ public static class staticContext
                 }
             };
         }
-        //Console.WriteLine($"exec start");
         process.Start();
         if (config.redirect)
         {
-            //Console.WriteLine($"exec BeginOutputReadLine");
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
         }
-        //Console.WriteLine($"exec WaitForExit");
         process.WaitForExit();
         var result = new processResult();
         if (config.redirect)
@@ -72,9 +68,7 @@ public static class staticContext
         }
         else
         {
-            //Console.WriteLine($"exec StandardOutput");
-            result.output = process.StandardOutput.ReadToEnd();
-            result.error = process.StandardError.ReadToEnd();
+
         }
         result.exitCode = process.ExitCode;
         return result;
@@ -90,8 +84,11 @@ public static class staticContext
         }
         process.StartInfo.UseShellExecute = config.useShellExecute;
         process.StartInfo.CreateNoWindow = config.createNoWindow;
-        process.StartInfo.RedirectStandardOutput = config.redirect;
-        process.StartInfo.RedirectStandardError = config.redirect;
+        if (config.redirect)
+        {
+            process.StartInfo.RedirectStandardOutput = config.redirect;
+            process.StartInfo.RedirectStandardError = config.redirect;
+        }
         if (config.environment.IsObject)
         {
             foreach (var pair in config.environment.GetObjectEnumerable())
@@ -151,7 +148,6 @@ public static class staticContext
                 }
             };
         }
-
         process.Start();
         if (config.redirect)
         {
@@ -167,10 +163,8 @@ public static class staticContext
         }
         else
         {
-            result.output = await process.StandardOutput.ReadToEndAsync();
-            result.error = await process.StandardError.ReadToEndAsync();
-        }
 
+        }
         result.exitCode = process.ExitCode;
         return result;
     }
