@@ -653,28 +653,32 @@ public struct JsonWrapper
             throw new InvalidOperationException("JsonWrapper: match only support string or regex type");
         }
         var match = regex.Match(Target.AsString);
-        var matchResult = Json.NewObject();
-        matchResult.Set("0", match.Value);
-        int index = 1;
-        foreach (Group group in match.Groups)
+        var matchResult = Json.Null;
+        if (match.Success)
         {
-            if (group.Success)
+            matchResult = Json.NewObject();
+            matchResult.Set("0", match.Value);
+            int index = 1;
+            foreach (Group group in match.Groups)
             {
-                matchResult.Set(index.ToString(), group.Value);
-                index++;
+                if (group.Success)
+                {
+                    matchResult.Set(index.ToString(), group.Value);
+                    index++;
+                }
             }
-        }
-        var groups = Json.NewObject();
-        foreach (Group group in match.Groups)
-        {
-            if (group.Success && !string.IsNullOrEmpty(group.Name) && group.Name != "0" && !int.TryParse(group.Name, out _))
+            var groups = Json.NewObject();
+            foreach (Group group in match.Groups)
             {
-                groups.Set(group.Name, group.Value);
+                if (group.Success && !string.IsNullOrEmpty(group.Name) && group.Name != "0" && !int.TryParse(group.Name, out _))
+                {
+                    groups.Set(group.Name, group.Value);
+                }
             }
-        }
-        if (groups.Count > 0)
-        {
-            matchResult.Set("groups", groups);
+            if (groups.Count > 0)
+            {
+                matchResult.Set("groups", groups);
+            }
         }
         return matchResult;
     }
