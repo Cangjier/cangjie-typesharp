@@ -170,7 +170,22 @@ public struct JsonWrapper
 
     public List<object> split(string separator)
     {
-        if (Target.IsString) return Target.AsString.Split(separator).Select(item => (object)item).ToList();
+        if (Target.IsString)
+        {
+            if (separator == string.Empty)
+            {
+                List<object> result = [];
+                foreach(var ch in Target.AsString)
+                {
+                    result.Add(ch.ToString());
+                }
+                return result;
+            }
+            else
+            {
+                return Target.AsString.Split(separator).Select(item => (object)item).ToList();
+            }
+        }
         else throw new InvalidOperationException("JsonWrapper: split only support string type");
     }
 

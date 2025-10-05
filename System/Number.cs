@@ -10,6 +10,10 @@ public class Number
         {
             return true;
         }
+        else if(int.TryParse(value.ToString(),out int valueOut))
+        {
+            return valueOut != int.MinValue;
+        }
         return false;
     }
 
