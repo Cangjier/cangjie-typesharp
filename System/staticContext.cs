@@ -294,7 +294,7 @@ public static class staticContext
         return value.ToString() ?? string.Empty;
     }
 
-    public static object Number(Json value)
+    public static Json Number(Json value)
     {
         if (value.IsString)
         {
@@ -308,11 +308,22 @@ public static class staticContext
             {
                 return doubleValue;
             }
-            throw new Exception($"`{value}` 无法解析为数字");
+            return Int32.MinValue;
         }
         else if (value.IsInt32) return value.AsInt32;
         else if (value.IsDouble) return value.AsDouble;
-        throw new Exception($"`{value}` 无法解析为数字");
+        return Int32.MinValue;
+    }
+
+    public static string String(Json value)
+    {
+        if (value.IsString) return value.AsString;
+        else if (value.IsInt32) return value.AsInt32.ToString();
+        else if (value.IsDouble) return value.AsDouble.ToString();
+        else if (value.IsBoolean) return value.AsBoolean ? "true" : "false";
+        else if (value.IsNull) return "null";
+        else if (value.IsUndefined) return "undefined";
+        else return value.ToString();
     }
 
     /// <summary>

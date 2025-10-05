@@ -24,6 +24,8 @@ namespace Cangjie.TypeSharp;
 
 public class TSScriptFileSystem
 {
+    public Func<string,bool> Exists { get; set; } = (string file) => File.Exists(file);
+
     public Func<string, Task<string>> GetFileContentAsync { get; set; } = async (string file) => await File.ReadAllTextAsync(file, Util.UTF8);
 
     public Func<string,string> GetFileContent { get; set; } = (string file) => File.ReadAllText(file, Util.UTF8);
@@ -276,7 +278,41 @@ public class TSScriptEngine
 
     public static async Task<Json> RunAsync(string filePath,string script, Context context, Action<TSStepContext>? onStepContext, Action<TSRuntimeContext>? onRuntimeContext)
     {
-        return await RunAsyncWithFiles(filePath, new TSScriptFileSystem(), context, onStepContext, onRuntimeContext);
+        var fileSystem = new TSScriptFileSystem();
+        fileSystem.GetFileContentAsync = async (string file) =>
+        {
+            if (file == filePath)
+            {
+                return script;
+            }
+            else
+            {
+                return await File.ReadAllTextAsync(file, Util.UTF8);
+            }
+        };
+        fileSystem.GetFileContent = (string file) =>
+        {
+            if (file == filePath)
+            {
+                return script;
+            }
+            else
+            {
+                return File.ReadAllText(file, Util.UTF8);
+            }
+        };
+        fileSystem.Exists = (string file) =>
+        {
+            if (file == filePath)
+            {
+                return true;
+            }
+            else
+            {
+                return File.Exists(file);
+            }
+        };
+        return await RunAsyncWithFiles(filePath, fileSystem, context, onStepContext, onRuntimeContext);
     }
 
     public static async Task<Json> RunAsyncWithFiles(string filePath,TSScriptFileSystem fileSystem, Context context, Action<TSStepContext>? onStepContext, Action<TSRuntimeContext>? onRuntimeContext)
@@ -294,7 +330,7 @@ public class TSScriptEngine
         async Task loadFile(string filePath)
         {
             if(filePathSet.Contains(filePath.ToLower())) return;
-            if (File.Exists(filePath) == false)
+            if (fileSystem.Exists(filePath) == false)
             {
                 Logger.Info($"File not found: {filePath}");
                 return;

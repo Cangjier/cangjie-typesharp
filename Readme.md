@@ -13,3 +13,5 @@ Target: Eval type script with csharp runtime.
 1. 在()中出现:时，支持将:后续的{}识别为类型
 2. 支持this ？？？
 3. 当try中return时，并不会执行finally的bug
+4. 支持[].push(...[1,2,3])中的...
+5. 
