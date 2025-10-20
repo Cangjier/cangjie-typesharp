@@ -250,6 +250,7 @@ public struct JsonWrapper
             else if (Target.IsString) return Target.AsString.Length;
             else if (Target.IsObject) return Target.AsObject.Count;
             else return Json.Undefined;
+
         }
     }
 
