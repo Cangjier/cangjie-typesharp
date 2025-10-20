@@ -172,11 +172,11 @@ public class TSRuntimeContext : RuntimeContext<char>
     {
         string typeString = "";
         var jsonValue = new Json(value.Value);
-        if (jsonValue.IsString) typeString = "string";
+        if (jsonValue.IsUndefined) typeString = "undefined";
+        else if (jsonValue.IsString) typeString = "string";
         else if (jsonValue.IsNumber) typeString = "number";
         else if (jsonValue.IsBoolean) typeString = "boolean";
         else if (jsonValue.IsNull) typeString = "null";
-        else if (jsonValue.IsUndefined) typeString = "undefined";
         else if (jsonValue.IsArray) typeString = "object";
         else if (jsonValue.Node is Delegate) typeString = "function";
         else if (jsonValue.IsObject) typeString = "object";
