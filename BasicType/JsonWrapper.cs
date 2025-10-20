@@ -168,22 +168,35 @@ public struct JsonWrapper
         return Target.Contains(value);
     }
 
-    public List<object> split(string separator)
+    public List<object> split(Json separator)
     {
         if (Target.IsString)
         {
-            if (separator == string.Empty)
+            if (separator.IsString)
             {
-                List<object> result = [];
-                foreach(var ch in Target.AsString)
+                var sepraratorString = separator.AsString;
+                if (sepraratorString == string.Empty)
                 {
-                    result.Add(ch.ToString());
+                    List<object> result = [];
+                    foreach (var ch in Target.AsString)
+                    {
+                        result.Add(ch.ToString());
+                    }
+                    return result;
                 }
-                return result;
+                else
+                {
+                    return Target.AsString.Split(sepraratorString).Select(item => (object)item).ToList();
+                }
+            }
+            else if(separator.Is<Regex>())
+            {
+                var regex = separator.As<Regex>();
+                return regex.Split(Target.AsString).Select(item => (object)item).ToList();
             }
             else
             {
-                return Target.AsString.Split(separator).Select(item => (object)item).ToList();
+                throw new InvalidOperationException("JsonWrapper: split separator only support string or regex type");
             }
         }
         else throw new InvalidOperationException("JsonWrapper: split only support string type");
