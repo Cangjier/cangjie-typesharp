@@ -36,7 +36,9 @@ public class Treatment:IDisposable
 
     public Json EvalString(string script)
     {
-        return TSScriptEngine.Run(script,ScriptContext);
+        var task = TSScriptEngine.RunAsync(ScriptContext.script_path,script,ScriptContext);
+        task.Wait();
+        return task.Result;
     }
 
     public void Process(Json self, string[] skipKeys)

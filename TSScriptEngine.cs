@@ -359,9 +359,9 @@ public class TSScriptEngine
             documents.Add(document);
             textContexts.Add(textContext);
 #if DEBUG
-            var root = textContext.Root.ToString();
-            Console.WriteLine(Path.GetFullPath("root.xml"));
-            File.WriteAllText("root.xml", root);
+            //var root = textContext.Root.ToString();
+            //Console.WriteLine(Path.GetFullPath("root.xml"));
+            //File.WriteAllText("root.xml", root);
 #endif
         }
         await loadFile(filePath);
@@ -372,8 +372,8 @@ public class TSScriptEngine
             stopwatch.Stop();
             Logger.Info($"Compile: {stopwatch.ElapsedMilliseconds}ms");
 #if DEBUG
-            Console.WriteLine(Path.GetFullPath("steps.text"));
-            File.WriteAllText($"steps.text", steps.ToString());
+            //Console.WriteLine(Path.GetFullPath("steps.text"));
+            //File.WriteAllText($"steps.text", steps.ToString());
 #endif
         }
 
