@@ -29,6 +29,17 @@ public class Server
             await programInstance.RunAsync(context);
             await context.Logger.QueueLogger.WaitForEmpty();
         };
+        Application.ServiceScope.TaskService.ProgramCollection.RunProgramByFilePathAndContext = async (program, filePath, context) =>
+        {
+            if (program is not TSProgram programInstance)
+            {
+                throw new ArgumentException($"program is not a TSProgram");
+            }
+            var asContext = context as Context ?? throw new ArgumentException($"context is not a Context");
+            asContext.script_path = filePath;
+            asContext.args = [];
+            await programInstance.RunAsync(asContext);
+        };
     }
 
     public Application Application { get; } = new();
