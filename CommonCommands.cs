@@ -160,6 +160,17 @@ public class CommonCommands
             await programInstance.RunAsync(context);
             await context.Logger.QueueLogger.WaitForEmpty();
         };
+        application.ServiceScope.TaskService.ProgramCollection.RunProgramByFilePathAndContext = async (program, filePath, context) =>
+        {
+            if (program is not TSProgram programInstance)
+            {
+                throw new ArgumentException($"program is not a TSProgram");
+            }
+            var asContext = context as Context ?? throw new ArgumentException($"context is not a Context");
+            asContext.script_path = filePath;
+            asContext.args = [];
+            await programInstance.RunAsync(asContext);
+        };
         ApplicationConfig applicationConfig = new();
         applicationConfig.EnableDatabase = false;
         applicationConfig.EnableShareServer = false;
