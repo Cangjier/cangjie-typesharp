@@ -1,4 +1,5 @@
 ﻿namespace Cangjie.TypeSharp.System;
+
 public class base64Utils
 {
     public static string encodeString(string value)
@@ -9,6 +10,11 @@ public class base64Utils
     public static string encode(byte[] bytes)
     {
         return Convert.ToBase64String(bytes);
+    }
+
+    public static string encode(byte[] bytes, int offset, int length)
+    {
+        return Convert.ToBase64String(bytes, offset, length);
     }
 
     public static string decodeString(string value)

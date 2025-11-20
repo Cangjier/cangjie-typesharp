@@ -12,10 +12,27 @@ public class terminal
 {
     private static ConcurrentDictionary<Guid, terminalWrapper> Terminals { get; } = [];
 
-    public static async Task<terminalWrapper> createAsync(terminalOptions options)
+    public static terminalWrapper create(terminalOptions options)
     {
-        var terminal = new terminalWrapper(ITerminal.CreateTerminal());
-        await terminal.start(options);
+        var translatedOptions = new TerminalOptions();
+        if (options.shell != null)
+        {
+            translatedOptions.Shell = options.shell;
+        }
+        if (options.workingDirectory != null)
+        {
+            translatedOptions.WorkingDirectory = options.workingDirectory;
+        }
+        if (options.environmentVariables.IsObject)
+        {
+            foreach (var pair in options.environmentVariables.GetObjectEnumerable())
+            {
+                translatedOptions.EnvironmentVariables[pair.Key] = pair.Value.AsString;
+            }
+        }
+        translatedOptions.Columns = options.columns;
+        translatedOptions.Rows = options.rows;
+        var terminal = new terminalWrapper(ITerminal.CreateTerminal(translatedOptions));
         Terminals[terminal.Target.ID] = terminal;
         return terminal;
     }
@@ -85,10 +102,13 @@ public class terminalWrapper
     public terminalWrapper(ITerminal target)
     {
         Target = target;
-        target.OutputReceived += (bytes, length) =>
+        target.OutputReceived += async (bytes, length) =>
         {
-            OutputBuffer.Write(bytes.AsSpan(0, length));
-            OnData?.Invoke(bytes, length);
+            if(OnOutput is not null)
+            {
+                await OnOutput(bytes, length);
+            }
+            HistoryBuffer.Write(bytes.AsSpan(0, length));
         };
     }
 
@@ -96,14 +116,11 @@ public class terminalWrapper
 
     public ITerminal Target { get; }
 
-    private Action<byte[], int>? OnData;
+    public Guid ID => Target.ID;
 
-    private CircularBuffer OutputBuffer { get; } = new(4096);
+    private CircularBuffer HistoryBuffer { get; } = new(4096);
 
-    public void onOutput(Action<byte[], int> callback)
-    {
-        OnData = callback;
-    }
+    private Func<byte[], int, Task>? OnOutput;
 
     public async Task writeAsync(Json data)
     {
@@ -123,32 +140,16 @@ public class terminalWrapper
         }
     }
 
-    public async Task start(terminalOptions options)
+    public async Task startAsync(Func<byte[], int, Task> callback)
     {
-        var translatedOptions = new TerminalOptions();
-        if (options.shell != null)
-        {
-            translatedOptions.Shell = options.shell;
-        }
-        if (options.workingDirectory != null)
-        {
-            translatedOptions.WorkingDirectory = options.workingDirectory;
-        }
-        if (options.environmentVariables.IsObject)
-        {
-            foreach (var pair in options.environmentVariables.GetObjectEnumerable())
-            {
-                translatedOptions.EnvironmentVariables[pair.Key] = pair.Value.AsString;
-            }
-        }
-        translatedOptions.Columns = options.columns;
-        translatedOptions.Rows = options.rows;
-        await Target.StartAsync(translatedOptions);
+        OnOutput = callback;
+        await Target.StartAsync();
     }
 
-    public byte[] getOutput()
+    public byte[] getHistory()
     {
-        return OutputBuffer.ToArray();
+        return HistoryBuffer.ToArray();
     }
+
 }
 
