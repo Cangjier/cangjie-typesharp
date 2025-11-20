@@ -13,6 +13,7 @@ public class Server
 {
     public Server()
     {
+        Application = new Application();
         Application.ServiceScope.TaskService.ProgramCollection.CreateProgramByScriptContent = (filePath, content) =>
         {
             return new TSProgram(filePath, content);
@@ -41,8 +42,11 @@ public class Server
             await programInstance.RunAsync(asContext);
         };
     }
-
-    public Application Application { get; } = new();
+    public Server(Application application)
+    {
+        Application = application;
+    }
+    public Application Application { get; }
 
     public ApplicationConfig ApplicationConfig { get; } = new();
 
