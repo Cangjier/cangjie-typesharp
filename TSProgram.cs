@@ -10,6 +10,7 @@ using Cangjie.TypeSharp.System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using TidyHPC.Common;
 using TidyHPC.Extensions;
 using TidyHPC.Loggers;
 
@@ -172,6 +173,24 @@ public class TSProgram:IProgram
         runtimeContext.AddContextObject(context);
         await Steps.RunAsync(runtimeContext);
         contextObjects.Clear();
+    }
+
+    public async Task<IDisposable> RunWithoutDisposeAsync(Context context)
+    {
+        ToDispose toDispose = new();
+        ConcurrentDictionary<Type, RuntimeObject> contextObjects = new();
+        TSRuntimeContext runtimeContext = new();
+        runtimeContext.ContextObjects = contextObjects;
+        runtimeContext.MountVariableSpace(context.getContext);
+        runtimeContext.AddContextObject(context);
+        await Steps.RunAsync(runtimeContext);
+        // contextObjects.Clear();
+        toDispose.Add(() =>
+        {
+            runtimeContext.Dispose();
+            contextObjects.Clear();
+        });
+        return toDispose;
     }
 
     public void Dispose()

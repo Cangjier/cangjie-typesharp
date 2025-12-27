@@ -169,7 +169,7 @@ public class CommonCommands
             var asContext = context as Context ?? throw new ArgumentException($"context is not a Context");
             asContext.script_path = filePath;
             asContext.args = [];
-            await programInstance.RunAsync(asContext);
+            return await programInstance.RunWithoutDisposeAsync(asContext);
         };
         ApplicationConfig applicationConfig = new();
         applicationConfig.EnableDatabase = false;

@@ -12,15 +12,14 @@
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
     <PackageReference Include="System.Management" Version="8.0.0" />
-    <PackageReference Include="Cangjie" Version="*" Condition="!Exists('..\cangjie\Cangjie.csproj')"/>
+    <PackageReference Include="Cangjie" Version="*" Condition="!Exists('..\cangjie\Cangjie.csproj')" />
     <PackageReference Include="VizGroup" Version="*" Condition="!Exists('..\viz-group-service\VizGroup.csproj')" />
-    <PackageReference Include="TidyHPC" Version="*" Condition="!Exists('..\tidy-hpc\TidyHPC.csproj')"/>
+    <PackageReference Include="TidyHPC" Version="*" Condition="!Exists('..\tidy-hpc\TidyHPC.csproj')" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\viz-group-service\VizGroup.csproj" Condition="Exists('..\viz-group-service\VizGroup.csproj')" />
-    <ProjectReference Include="..\cangjie\Cangjie.csproj" Condition="Exists('..\cangjie\Cangjie.csproj')"/>
-    <ProjectReference Include="..\tidy-hpc\TidyHPC.csproj" Condition="Exists('..\tidy-hpc\TidyHPC.csproj')"/>
+    <ProjectReference Include="..\tidy-hpc\TidyHPC.csproj" Condition="Exists('..\tidy-hpc\TidyHPC.csproj')" />
   </ItemGroup>
 
 </Project>

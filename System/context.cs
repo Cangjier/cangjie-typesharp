@@ -147,6 +147,12 @@ public class Context:IDisposable
         return TSScriptEngine.Run(script, context);
     }
 
+    public async Task<Json> evalAsync(string script)
+    {
+        using var context = new Context(this);
+        return await TSScriptEngine.RunAsync(script_path,script, context);
+    }
+
     public void setLoggerPath(string path)
     {
         Logger.FilePath = path;

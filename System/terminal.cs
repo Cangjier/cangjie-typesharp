@@ -104,29 +104,35 @@ public class terminalWrapper
         Target = target;
         target.OutputReceived += async (bytes, length) =>
         {
-            if(OnOutput is not null)
+            if (OnOutputBase64Bytes is not null)
             {
-                await OnOutput(bytes, length);
+                await OnOutputBase64Bytes(Convert.ToBase64String(bytes.AsSpan(0, length)));
             }
-            HistoryBuffer.Write(bytes.AsSpan(0, length));
         };
     }
-
-    private static UTF8Encoding utf8 = new();
 
     public ITerminal Target { get; }
 
     public Guid ID => Target.ID;
 
-    private CircularBuffer HistoryBuffer { get; } = new(4096);
+    private Func<string, Task>? OnOutputBase64Bytes;
 
-    private Func<byte[], int, Task>? OnOutput;
+    private static Encoding UTF8Encoding = new UTF8Encoding(false);
+
+    private Encoding InputEncoding = UTF8Encoding;
+
+    private bool isStarted = false;
+
+    public async Task resizeAsync(int columns, int rows)
+    {
+        await Target.ResizeAsync(columns, rows);
+    }
 
     public async Task writeAsync(Json data)
     {
         if (data.IsString)
         {
-            var bytes = utf8.GetBytes(data.AsString);
+            var bytes = InputEncoding.GetBytes(data.AsString);
             await Target.WriteInputAsync(bytes, bytes.Length);
         }
         else if (data.Is<byte[]>())
@@ -140,16 +146,14 @@ public class terminalWrapper
         }
     }
 
-    public async Task startAsync(Func<byte[], int, Task> callback)
+    public async Task startWithBase64BytesOutputAsync(Func<string, Task> callback)
     {
-        OnOutput = callback;
-        await Target.StartAsync();
+        OnOutputBase64Bytes = callback;
+        if (!isStarted)
+        {
+            await Target.StartAsync();
+            isStarted = true;
+        }
     }
-
-    public byte[] getHistory()
-    {
-        return HistoryBuffer.ToArray();
-    }
-
 }
 
