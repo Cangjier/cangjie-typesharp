@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\viz-group-service\VizGroup.csproj" Condition="Exists('..\viz-group-service\VizGroup.csproj')" />
     <ProjectReference Include="..\tidy-hpc\TidyHPC.csproj" Condition="Exists('..\tidy-hpc\TidyHPC.csproj')" />
+	<ProjectReference Include="..\cangjie\Cangjie.csproj" Condition="Exists('..\cangjie\Cangjie.csproj')" />
   </ItemGroup>
 
 </Project>
