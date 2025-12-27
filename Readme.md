@@ -16,3 +16,4 @@ Target: Eval type script with csharp runtime.
 4. 支持[].push(...[1,2,3])中的...
 5. 支持let [a,b]=[1,2];
 6. 支持let {a,b}=obj;
+
