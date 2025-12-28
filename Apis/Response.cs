@@ -88,7 +88,7 @@ public class Response:IDisposable
             var boundaryValue = multipartMimeType.Map["boundary"];
             string? boundary = null;
             if (boundaryValue is string) boundary = boundaryValue as string;
-            if (boundaryValue is Field field) boundary = field.Value;
+            if (boundaryValue is Field targetField) boundary = targetField.Value;
             if (boundary == null) return false;
             return true;
         }
