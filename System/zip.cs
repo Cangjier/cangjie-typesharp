@@ -5,7 +5,9 @@ namespace Cangjie.TypeSharp.System;
 /// <summary>
 /// zip压缩
 /// </summary>
+#pragma warning disable CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 public class zip
+#pragma warning restore CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 {
     public static async Task extract(string zipPath,string extractDirectory)
     {
@@ -43,7 +45,7 @@ public class zip
             }
             else
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? throw new Exception("Path.GetDirectoryName(fullPath) is null"));
                 using Stream stream = entry.Open();
                 using FileStream fileStream = new(fullPath, FileMode.Create);
                 await stream.CopyToAsync(fileStream);

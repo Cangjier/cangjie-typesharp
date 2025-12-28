@@ -9,7 +9,9 @@ namespace Cangjie.TypeSharp.System;
 /// <summary>
 /// 数据库
 /// </summary>
+#pragma warning disable CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 public class database
+#pragma warning restore CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 {
     public database(Database target)
     {

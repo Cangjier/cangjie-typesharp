@@ -8,7 +8,9 @@ namespace Cangjie.TypeSharp.System;
 /// <summary>
 /// 终端管理
 /// </summary>
+#pragma warning disable CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 public class terminal
+#pragma warning restore CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 {
     private static ConcurrentDictionary<Guid, terminalWrapper> Terminals { get; } = [];
 

@@ -12,7 +12,9 @@ namespace Cangjie.TypeSharp.System;
 /// <summary>
 /// Code相关功能
 /// </summary>
+#pragma warning disable CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 public class code
+#pragma warning restore CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 {
     private static Template<char> Template { get; } = InitialTemplate(new());
 

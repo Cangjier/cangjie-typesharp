@@ -3,7 +3,9 @@ using System.Text;
 using TidyHPC.LiteJson;
 
 namespace Cangjie.TypeSharp.System;
+#pragma warning disable CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 public class cryptography
+#pragma warning restore CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 {
     /// <summary>
     /// 计算 HMAC-SHA-256 哈希值
