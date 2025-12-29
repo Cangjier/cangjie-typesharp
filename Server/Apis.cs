@@ -59,7 +59,7 @@ public class Apis
         /// <summary>
         /// 响应结果
         /// </summary>
-        public static Api Response { get; } = new("/api/V2/response", "/api/V2/response");
+        public static Api Response { get; } = new("/api/v1/response", "/api/v1/response");
 
         /// <summary>
         /// 代理服务
@@ -74,27 +74,27 @@ public class Apis
                 /// <summary>
                 /// 注册代理人
                 /// </summary>
-                public static Api Register { get; } = new("/api/V2/agents/register", "/api/V2/agents/register");
+                public static Api Register { get; } = new("/api/v1/agents/register", "/api/v1/agents/register");
 
                 /// <summary>
                 /// 更新性能信息
                 /// </summary>
-                public static Api UpdatePerformance { get; } = new("/api/V2/agents/updateperformance", "/api/V2/agents/updateperformance");
+                public static Api UpdatePerformance { get; } = new("/api/v1/agents/updateperformance", "/api/v1/agents/updateperformance");
 
                 /// <summary>
                 /// 更新插件信息
                 /// </summary>
-                public static Api UpdatePlugins { get; } = new("/api/V2/agents/updateplugins", "/api/V2/agents/updateplugins");
+                public static Api UpdatePlugins { get; } = new("/api/v1/agents/updateplugins", "/api/v1/agents/updateplugins");
 
                 /// <summary>
                 /// 获取所有代理人
                 /// </summary>
-                public static Api Get { get; } = new("/api/V2/agents/get", "/api/V2/agents/get");
+                public static Api Get { get; } = new("/api/v1/agents/get", "/api/v1/agents/get");
 
                 /// <summary>
                 /// 安装包
                 /// </summary>
-                public static Api InstallPackage { get; } = new("/api/V2/agents/installpackage", "/api/V2/agents/installpackage");
+                public static Api InstallPackage { get; } = new("/api/v1/agents/installpackage", "/api/v1/agents/installpackage");
             }
 
             /// <summary>
@@ -105,12 +105,12 @@ public class Apis
                 /// <summary>
                 /// 运行任务
                 /// </summary>
-                public static Api Run { get; } = new("/api/V2/agents/run", "/api/V2/agents/run");
+                public static Api Run { get; } = new("/api/v1/agents/run", "/api/v1/agents/run");
 
                 /// <summary>
                 /// 安装包
                 /// </summary>
-                public static Api InstallPackage { get; } = new("/api/V2/agents/agent/installpackage", "/api/V2/agents/agent/installpackage");
+                public static Api InstallPackage { get; } = new("/api/v1/agents/agent/installpackage", "/api/v1/agents/agent/installpackage");
             }
         }
 
@@ -122,32 +122,43 @@ public class Apis
             /// <summary>
             /// 运行任务，同步返回
             /// </summary>
-            public static Api Run { get; } = new("/api/V2/tasks/run", "/api/V2/tasks/run");
+            public static Api Run { get; } = new("/api/v1/tasks/run", "/api/v1/tasks/run");
 
             /// <summary>
             /// 发起任务，异步返回
             /// </summary>
-            public static Api RunAsync { get; } = new("/api/V2/tasks/runasync", "/api/V2/tasks/runasync");
+            public static Api RunAsync { get; } = new("/api/v1/tasks/runasync", "/api/v1/tasks/runasync");
 
             /// <summary>
             /// 查询任务
             /// </summary>
-            public static Api Query { get; } = new("/api/V2/tasks/query", "/api/V2/tasks/query");
+            public static Api Query { get; } = new("/api/v1/tasks/query", "/api/v1/tasks/query");
 
             /// <summary>
             /// 发起插件任务，异步返回
             /// </summary>
-            public static Api PluginRunAsync { get; } = new("/api/V2/tasks/plugin/runasync", "/api/V2/tasks/plugin/runasync");
+            public static Api PluginRunAsync { get; } = new("/api/v1/tasks/plugin/runasync", "/api/v1/tasks/plugin/runasync");
 
             /// <summary>
             /// 更新进度
             /// </summary>
-            public static Api UpdateProgress { get; } = new("/api/V2/tasks/updateprogress", "/api/V2/tasks/updateprogress");
+            public static Api UpdateProgress { get; } = new("/api/v1/tasks/updateprogress", "/api/v1/tasks/updateprogress");
 
             /// <summary>
             /// 订阅进度
             /// </summary>
-            public static Api SubscribeProgress { get; } = new("/api/V2/tasks/subscribeprogress", "/api/V2/tasks/subscribeprogress");
+            public static Api SubscribeProgress { get; } = new("/api/v1/tasks/subscribeprogress", "/api/v1/tasks/subscribeprogress");
+        }
+
+        /// <summary>
+        /// WebApp接口
+        /// </summary>
+        public class WebApp
+        {
+            /// <summary>
+            /// 广播消息
+            /// </summary>
+            public static Api Broadcast { get; } = new("/api/v1/app/broadcast", "/api/v1/app/broadcast");
         }
     }
 }

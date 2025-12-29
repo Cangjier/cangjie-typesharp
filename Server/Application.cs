@@ -93,6 +93,7 @@ public class Application
         TaskWebService = new(TaskService);
         AgentServerWebService = new(TaskService);
         AgentClientWebService = new(TaskService);
+        AppService = new();
     }
 
     /// <summary>
@@ -114,6 +115,8 @@ public class Application
     private AgentWebService.Server AgentServerWebService { get; }
 
     private AgentWebService.Client AgentClientWebService { get; }
+
+    private AppService AppService { get; }
 
     /// <summary>
     /// 当配置完成时
@@ -295,6 +298,8 @@ public class Application
         UrlRouter.Register([Apis.V2.Agents.Server.InstallPackage.pattern], AgentServerWebService.InstallPackage);
         UrlRouter.Register([Apis.V2.Agents.Client.Run.pattern], AgentClientWebService.Run);
         #endregion
+
+        UrlRouter.Register([Apis.V2.WebApp.Broadcast.pattern], AppService.Broadcast);
 
         bool isFirstLoadedPlugins = false;
         TaskService.PluginCollection.OnLoadedPlugins += () =>
