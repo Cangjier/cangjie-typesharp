@@ -8,13 +8,13 @@ public class AgentApplication
 {
     public AgentApplication()
     {
-        Application = new VizGroup.V1.AgentApplication();
-        Config = new VizGroup.V1.AgentApplicationConfig();
+        Application = new Cangjie.TypeSharp.Server.AgentApplication();
+        Config = new Cangjie.TypeSharp.Server.AgentApplicationConfig();
     }
 
-    public VizGroup.V1.AgentApplication Application { get; }
+    public Cangjie.TypeSharp.Server.AgentApplication Application { get; }
 
-    public VizGroup.V1.AgentApplicationConfig Config { get; }
+    public Cangjie.TypeSharp.Server.AgentApplicationConfig Config { get; }
 
     /// <summary>
     /// use plugin

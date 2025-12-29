@@ -6,7 +6,6 @@ using TidyHPC.Extensions;
 using TidyHPC.Loggers;
 using TidyHPC.Routers;
 using TidyHPC.Routers.Args;
-using VizGroup.V1;
 
 namespace Cangjie.TypeSharp.System;
 
@@ -135,48 +134,5 @@ public class CommonCommands
         Logger.Info($"local application data: {Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}");
         Logger.Info($"program files: {Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)}");
         Logger.Info($"program files x86: {Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}");
-    }
-
-    public static async Task Viz([ArgsIndex]string port="")
-    {
-        if(int.TryParse(port, out int portInt) == false)
-        {
-            portInt = netUtils.getAvailableTcpPorts(1)[0];
-        }
-        Application application = new();
-        application.ServiceScope.TaskService.ProgramCollection.CreateProgramByScriptContent = (filePath, content) =>
-        {
-            return new TSProgram(filePath, content);
-        };
-        application.ServiceScope.TaskService.ProgramCollection.RunProgramByFilePathAndArgs = async (program, filePath, args) =>
-        {
-            if (program is not TSProgram programInstance)
-            {
-                throw new ArgumentException();
-            }
-            using var context = new Context();
-            context.script_path = filePath;
-            context.args = args;
-            await programInstance.RunAsync(context);
-            await context.Logger.QueueLogger.WaitForEmpty();
-        };
-        application.ServiceScope.TaskService.ProgramCollection.RunProgramByFilePathAndContext = async (program, filePath, context) =>
-        {
-            if (program is not TSProgram programInstance)
-            {
-                throw new ArgumentException($"program is not a TSProgram");
-            }
-            var asContext = context as Context ?? throw new ArgumentException($"context is not a Context");
-            asContext.script_path = filePath;
-            asContext.args = [];
-            return await programInstance.RunWithoutDisposeAsync(asContext);
-        };
-        ApplicationConfig applicationConfig = new();
-        applicationConfig.EnableDatabase = false;
-        applicationConfig.EnableShareServer = false;
-        applicationConfig.EnableAnyIP = true;
-        applicationConfig.ServerPorts = [portInt];
-        await application.Start(applicationConfig);
-    }
-    
+    } 
 }
