@@ -18,7 +18,6 @@ public class PluginCollection
     public PluginCollection(TaskService taskService)
     {
         TaskService = taskService;
-        PluginDirectory = Util.GetSpecialDirectory("Plugins");
         _ = Task.Run(DiscreteScheduler.StartAsync);
         ListenPluginsDirectoryChanged();
     }
@@ -34,7 +33,7 @@ public class PluginCollection
     public ConcurrentDictionary<string, PluginInterface> Plugins { get; } = new();
 
     private ConcurrentDictionary<string, string> PluginPaths { get; } = new();
-    
+
     /// <summary>
     /// 当重新加载插件时
     /// </summary>
@@ -47,24 +46,7 @@ public class PluginCollection
     /// </summary>
     public bool Enable
     {
-        get=>_Enable;
-        set
-        {
-            if (_Enable != value)
-            {
-                _Enable = value;
-                if (value)
-                {
-                    ReloadPlugins();
-                }
-                else
-                {
-                    Plugins.Clear();
-                    PluginPaths.Clear();
-                }
-            }
-           
-        }
+        get => _Enable;
     }
 
     private DiscreteScheduler DiscreteScheduler { get; } = new();
@@ -77,24 +59,35 @@ public class PluginCollection
     public string PluginDirectory
     {
         get => _PluginDirectory;
-        set
+    }
+
+    public void SetPluginDirectory(string pluginDirectory, bool enable)
+    {
+        bool needReload = false;
+        if (_PluginDirectory != pluginDirectory)
         {
-            if (_PluginDirectory != value)
+            _PluginDirectory = pluginDirectory;
+            needReload = true;
+        }
+        if (_Enable != enable)
+        {
+            _Enable = enable;
+            needReload = true;
+        }
+        if (needReload)
+        {
+            if (FileSystemWatcher != null)
             {
-                _PluginDirectory = value;
-                if (FileSystemWatcher != null)
-                {
-                    FileSystemWatcher.Dispose();
-                }
-                ListenPluginsDirectoryChanged();
-                ReloadPlugins();
+                FileSystemWatcher.Dispose();
             }
+            ListenPluginsDirectoryChanged();
+            _ = TryNotifyScheduler();
         }
     }
 
     private FileSystemWatcher? FileSystemWatcher { get; set; }
 
-    private void TryAddPlugin( PluginInterface pluginWrap, string packagePath)
+    private void TryAddPlugin(PluginInterface pluginWrap, string packagePath)
     {
         string pluginName = pluginWrap.Name.ToLower();
         if (Plugins.TryGetValue(pluginName, out var oldPlugin))
@@ -149,7 +142,7 @@ public class PluginCollection
                     });
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Logger.Error(e);
             }
@@ -160,7 +153,7 @@ public class PluginCollection
     /// <summary>
     /// 重新加载
     /// </summary>
-    public void ReloadPlugins()
+    private void ReloadPlugins()
     {
         Plugins.Clear();
         PluginPaths.Clear();
@@ -196,7 +189,7 @@ public class PluginCollection
     /// <param name="pluginName"></param>
     /// <param name="result"></param>
     /// <returns></returns>
-    public bool TryGetPlugin(string pluginName,out PluginInterface result)
+    public bool TryGetPlugin(string pluginName, out PluginInterface result)
     {
         return Plugins.TryGetValue(pluginName.ToLower(), out result);
     }
@@ -207,7 +200,7 @@ public class PluginCollection
 
     private SemaphoreSlim ChangeSemaphore { get; } = new(1);
 
-    private async Task TryNotifyScheduler()
+    public async Task TryNotifyScheduler()
     {
         if (Enable == false)
         {
@@ -221,12 +214,18 @@ public class PluginCollection
         NotifyScheduler = DiscreteScheduler.AddTask(TimeSpan.FromSeconds(4), async () =>
         {
             await ChangeSemaphore.WaitAsync();
-            if (Enable)
+            try
             {
-                Logger.Info("Reload Plugins");
-                ReloadPlugins();
+                if (Enable)
+                {
+                    Logger.Info("Reload Plugins");
+                    ReloadPlugins();
+                }
             }
-            ChangeSemaphore.Release();
+            finally
+            {
+                ChangeSemaphore.Release();
+            }
         });
         NodifySemaphore.Release();
     }
@@ -267,13 +266,13 @@ public class PluginCollection
             onItem(plugin.Value);
         }
     }
-    
+
     /// <summary>
     /// 根据条件过滤插件
     /// </summary>
     /// <param name="onPredicate"></param>
     /// <returns></returns>
-    public IEnumerable<PluginInterface> FilterPlugins(Func<PluginInterface,bool> onPredicate)
+    public IEnumerable<PluginInterface> FilterPlugins(Func<PluginInterface, bool> onPredicate)
     {
         foreach (var plugin in Plugins)
         {
@@ -296,10 +295,11 @@ public class PluginCollection
         List<Task<IDisposable>> tasks = [];
         foreach (var plugin in tsPlugin)
         {
-            tasks.Add(plugin.RunTypeSharpServer(TaskService,context));
+            tasks.Add(plugin.RunTypeSharpServer(TaskService, context));
         }
         var disposes = await Task.WhenAll(tasks);
         toDispose.Add(disposes);
         return toDispose;
     }
+
 }

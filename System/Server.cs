@@ -13,33 +13,6 @@ public class Server
     public Server()
     {
         Application = new Application();
-        Application.TaskService.ProgramCollection.CreateProgramByScriptContent = (filePath, content) =>
-        {
-            return new TSProgram(filePath, content);
-        };
-        Application.TaskService.ProgramCollection.RunProgramByFilePathAndArgs = async (program, filePath, args) =>
-        {
-            if (program is not TSProgram programInstance)
-            {
-                throw new ArgumentException();
-            }
-            using var context = new Context();
-            context.script_path = filePath;
-            context.args = args;
-            await programInstance.RunAsync(context);
-            await context.Logger.QueueLogger.WaitForEmpty();
-        };
-        Application.TaskService.ProgramCollection.RunProgramByFilePathAndContext = async (program, filePath, context) =>
-        {
-            if (program is not TSProgram programInstance)
-            {
-                throw new ArgumentException($"program is not a TSProgram");
-            }
-            var asContext = context as Context ?? throw new ArgumentException($"context is not a Context");
-            asContext.script_path = filePath;
-            asContext.args = [];
-            return await programInstance.RunWithoutDisposeAsync(asContext);
-        };
     }
     public Server(Application application)
     {
@@ -53,7 +26,6 @@ public class Server
 
     public async Task start(int port)
     {
-        //UrlResponse.DefaultContentEncoding = "";
         ApplicationConfig.ServerPorts = [port];
         await Application.Start(ApplicationConfig);
     }
@@ -71,5 +43,11 @@ public class Server
     public void useStatic(string directory)
     {
         ApplicationConfig.StaticResourcePath = directory;
+    }
+
+    public void usePlugins(string directory, bool enable)
+    {
+        ApplicationConfig.PluginsDirectory = directory;
+        ApplicationConfig.EnablePlugins = enable;
     }
 }

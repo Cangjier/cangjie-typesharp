@@ -9,6 +9,7 @@ using TidyHPC.Routers.Urls.Interfaces;
 using TidyHPC.Routers.Urls.Responses;
 using Cangjie.TypeSharp.Server.TaskQueues;
 using Cangjie.TypeSharp.Server.WebService;
+using TidyHPC.LiteJson;
 
 
 namespace Cangjie.TypeSharp.Server;
@@ -135,7 +136,7 @@ public class Application
     /// <param name="config"></param>
     public async Task Start(ApplicationConfig config)
     {
-        
+
         //配置TaskService
         if (config.PluginsDirectory != null)
         {
@@ -146,10 +147,8 @@ public class Application
             }
             Util.CreateDirectory(fullPath);
             Logger.Info($"PluginDirectory {fullPath}");
-            TaskService.PluginCollection.PluginDirectory = fullPath;
+            TaskService.PluginCollection.SetPluginDirectory(fullPath, config.EnablePlugins);
         }
-        Logger.Info($"Enable Plugins {config.EnablePlugins}");
-        TaskService.PluginCollection.Enable = config.EnablePlugins;
         Logger.Info($"Enable ShareServer {config.EnableShareServer}");
         TaskService.ShareServer.Enabled = config.EnableShareServer;
         Logger.Info($"ShareServerUrlPrefix {config.ShareServerUrlPrefix}");
@@ -296,6 +295,27 @@ public class Application
         UrlRouter.Register([Apis.V2.Agents.Server.InstallPackage.pattern], AgentServerWebService.InstallPackage);
         UrlRouter.Register([Apis.V2.Agents.Client.Run.pattern], AgentClientWebService.Run);
         #endregion
+
+        bool isFirstLoadedPlugins = false;
+        TaskService.PluginCollection.OnLoadedPlugins += () =>
+        {
+            if (isFirstLoadedPlugins)
+            {
+                return;
+            }
+            isFirstLoadedPlugins = true;
+            _ = Task.Run(async () =>
+            {
+                var context = new Cangjie.TypeSharp.System.Context();
+                context.Logger = Logger.LoggerFile;
+                var scriptContext = context.context;
+                scriptContext["server"] = new Json(new Cangjie.TypeSharp.System.Server(this));
+                var disposes = await TaskService.PluginCollection.RunTypeSharpService(context);
+                // 不对资源进行释放，保持长驻内存
+                await Task.Delay(Timeout.Infinite);
+                disposes.Dispose();
+            });
+        };
 
         var mainTask = HttpServer.Start();
         _ = TaskService.ShareServer.Start(UrlRouter);

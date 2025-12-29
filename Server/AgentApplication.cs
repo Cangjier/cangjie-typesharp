@@ -91,10 +91,8 @@ public class AgentApplication
             }
             Util.CreateDirectory(fullPath);
             Logger.Info($"PluginDirectory {fullPath}");
-            TaskService.PluginCollection.PluginDirectory = fullPath;
+            TaskService.PluginCollection.SetPluginDirectory(fullPath, true);
         }
-        Logger.Info("Enable PluginCollection");
-        TaskService.PluginCollection.Enable = true;
         Logger.Info("Enable ShareServer");
         TaskService.ShareServer.Enabled = true;
         Logger.Info($"ShareServerUrlPrefix {config.ShareServerUrlPrefix}");
