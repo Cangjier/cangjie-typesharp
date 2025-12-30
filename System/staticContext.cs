@@ -62,7 +62,7 @@ public static class staticContext
         var result = new processResult();
         if (config.redirect)
         {
-            
+
             result.output = output.ToString();
             result.error = error.ToString();
         }
@@ -606,4 +606,6 @@ public static class staticContext
         }
         throw new Exception($"`{value}` 无法解析为日期");
     }
+
+    public static Json programContext { get; } = new Json();
 }
