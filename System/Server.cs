@@ -24,9 +24,21 @@ public class Server
 
     public TaskCompletionSource onConfigCompleted => Application.OnConfigCompleted;
 
-    public async Task start(int port)
+    public async Task start(Json port)
     {
-        ApplicationConfig.ServerPorts = [port];
+        List<int> ports = [];
+        if (port.IsArray)
+        {
+            foreach (var item in port.GetArrayEnumerable())
+            {
+                ports.Add(item.ToInt32);
+            }
+        }
+        else
+        {
+            ports.Add(port.ToInt32);
+        }
+        ApplicationConfig.ServerPorts = ports.ToArray();
         await Application.Start(ApplicationConfig);
     }
 

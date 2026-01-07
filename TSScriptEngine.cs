@@ -348,13 +348,29 @@ public class TSScriptEngine
                 var from = import.From;
                 if (string.IsNullOrEmpty(from)) continue;
                 if (from.Contains(".tsc")) continue;
-                var fromFilePath = from;
-                if (fromFilePath.EndsWith(".ts") == false)
+
+                List<string> fromFilePaths = [];
+                fromFilePaths.Add(from);
+                if (from.EndsWith(".ts") == false)
                 {
-                    fromFilePath += "/index.ts";
+                    fromFilePaths.Add(from + "/index.ts");
+                    fromFilePaths.Add(from + ".ts");
                 }
-                fromFilePath = Path.GetFullPath(fromFilePath, Path.GetDirectoryName(filePath) ?? throw new Exception("filePath is null"));
-                await loadFile(fromFilePath);
+                bool isFound = false;
+                foreach (var fromFilePath in fromFilePaths)
+                {
+                    var fullFilePath = Path.GetFullPath(fromFilePath, Path.GetDirectoryName(filePath) ?? throw new Exception("filePath is null"));
+                    if (File.Exists(fullFilePath))
+                    {
+                        await loadFile(fullFilePath);
+                        isFound = true;
+                        break;
+                    }
+                }
+                if (isFound == false)
+                {
+                    Logger.Info($"File not found: {from}");
+                }
             }
             documents.Add(document);
             textContexts.Add(textContext);

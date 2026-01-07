@@ -11,7 +11,29 @@ public class AppService
     /// <summary>
     /// 广播映射
     /// </summary>
-    public ConcurrentDictionary<string, IWebsocketResponse> BroadcastMap { get; } = [];
+    public ConcurrentDictionary<string, ConcurrentDictionary<string, IWebsocketResponse>> BroadcastMap { get; } = [];
+
+    /// <summary>
+    /// App锁
+    /// </summary>
+    private ConcurrentDictionary<string, object> LockMap { get; } = new();
+
+    private object LockLockMap = new();
+
+    private object GetAppLock(string appId)
+    {
+        lock (LockLockMap)
+        {
+            if (LockMap.TryGetValue(appId, out var lockObject))
+            {
+                return lockObject;
+            }
+            lockObject = new object();
+            LockMap[appId] = lockObject;
+            return lockObject;
+        }
+    }
+
 
     /// <summary>
     /// 广播消息到其他Web Page，不包括发送消息的页面
@@ -22,26 +44,46 @@ public class AppService
     {
         if (session.IsWebSocket == false)
         {
+            Logger.Debug("Broadcast request is not a websocket request");
             return;
         }
         var message = await session.Cache.GetRequstBodyJson();
         var action = message.Read("action", string.Empty);
         var appId = message.Read("app_id", string.Empty);
+        var pageId = message.Read("page_id", string.Empty);
+        Logger.Debug($"Broadcast request: app_id: {appId}, page_id: {pageId}, action: {action}");
+        if (string.IsNullOrEmpty(appId) || string.IsNullOrEmpty(pageId))
+        {
+            throw new ArgumentException("app_id or page_id is null or empty");
+        }
         if (action == "register")
         {
-            Logger.Debug($"Register broadcast client: {appId}");
-            if (string.IsNullOrEmpty(appId) == false)
+            var appLock = GetAppLock(appId);
+            lock (appLock)
             {
-                BroadcastMap[appId] = session.WebSocketResponse ?? throw new NullReferenceException();
-            }
-            else
-            {
-                throw new ArgumentException("app_id is null or empty");
+                Logger.Debug($"Register broadcast client: {appId}, page: {pageId}");
+                if (BroadcastMap.TryGetValue(appId, out var pageMap) == false)
+                {
+                    pageMap = new ConcurrentDictionary<string, IWebsocketResponse>();
+                    BroadcastMap[appId] = pageMap;
+                }
+                pageMap[pageId] = session.WebSocketResponse ?? throw new NullReferenceException();
             }
         }
         else if (action == "broadcast")
         {
-            var others = BroadcastMap.Where(x => x.Key != appId).ToArray();
+            var appLock = GetAppLock(appId);
+            ConcurrentDictionary<string, IWebsocketResponse>? pageMap = null;
+            lock (appLock)
+            {
+                if (BroadcastMap.TryGetValue(appId, out pageMap) == false)
+                {
+                    pageMap = new ConcurrentDictionary<string, IWebsocketResponse>();
+                    BroadcastMap[appId] = pageMap;
+                }
+            }
+
+            var others = pageMap.Where(x => x.Key != pageId).ToArray() ;
             Logger.Debug($"Broadcast to {others.Length} clients");
             foreach (var item in others)
             {
@@ -55,7 +97,7 @@ public class AppService
                     }
                     catch (Exception e)
                     {
-                        BroadcastMap.TryRemove(itemKey, out var _);
+                        pageMap?.TryRemove(itemKey, out var _);
                         Logger.Error("Broadcast failed", e);
                     }
                 });

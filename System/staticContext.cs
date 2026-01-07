@@ -607,5 +607,5 @@ public static class staticContext
         throw new Exception($"`{value}` 无法解析为日期");
     }
 
-    public static Json programContext { get; } = new Json();
+    public static Json programContext { get; } = Json.NewObject();
 }

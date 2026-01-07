@@ -7,7 +7,7 @@ namespace Cangjie.TypeSharp.System;
 /// 上下文
 /// </summary>
 #pragma warning disable CS8981 // 该类型名称仅包含小写 ascii 字符。此类名称可能会成为该语言的保留值。
-public class Context:IDisposable
+public class Context : IDisposable
 #pragma warning restore CS8981 // 该类型名称仅包含小写 ascii 字符。此类名称可能会成为该语言的保留值。
 {
     public Context()
@@ -22,6 +22,16 @@ public class Context:IDisposable
     public Context(Context reference)
     {
         this.reference = reference;
+    }
+
+    public Context(LoggerFile logger)
+    {
+        _Logger = logger;
+        _IsLoggerFileNeedDispose = false;
+        _apis = new(this);
+        _console = new(this);
+        _axios = new(this);
+        _context = Json.NewObject();
     }
 
     private Json _context = Json.Null;
@@ -48,6 +58,8 @@ public class Context:IDisposable
     public Axios axios => reference == null ? (_axios ?? throw new NullReferenceException(nameof(_axios))) : reference.axios;
 
     private LoggerFile? _Logger = null;
+
+    private bool _IsLoggerFileNeedDispose = true;
 
     public LoggerFile Logger
     {
@@ -108,7 +120,7 @@ public class Context:IDisposable
 
     public void setContext(Json context)
     {
-        if(reference == null)
+        if (reference == null)
         {
             _context = context;
         }
@@ -150,7 +162,7 @@ public class Context:IDisposable
     public async Task<Json> evalAsync(string script)
     {
         using var context = new Context(this);
-        return await TSScriptEngine.RunAsync(script_path,script, context);
+        return await TSScriptEngine.RunAsync(script_path, script, context);
     }
 
     public void setLoggerPath(string path)
@@ -169,7 +181,10 @@ public class Context:IDisposable
         script_path = null!;
         _apis?.Dispose();
         _apis = null!;
-        _Logger?.Dispose();
+        if (_IsLoggerFileNeedDispose)
+        {
+            _Logger?.Dispose();
+        }
         _Logger = null!;
         _console?.Dispose();
         _console = null!;

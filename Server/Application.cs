@@ -68,11 +68,6 @@ public class ApplicationConfig()
     /// ssl证书密码
     /// </summary>
     public string SSLCertificatePassword { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 拓展API接口的路由正则匹配，默认支持/api/v\d*/的接口
-    /// </summary>
-    public string? ExternalAPIRegex { get; set; } = null;
 }
 
 /// <summary>
@@ -139,7 +134,6 @@ public class Application
     /// <param name="config"></param>
     public async Task Start(ApplicationConfig config)
     {
-
         //配置TaskService
         if (config.PluginsDirectory != null)
         {
@@ -229,11 +223,10 @@ public class Application
         };
         //添加静态资源响应
         string staticResourcePath = config.StaticResourcePath ?? Path.Combine(Path.GetDirectoryName(Environment.ProcessPath) ?? "", "build");
-        string apiRegex = config.ExternalAPIRegex == null ?
-            @"/api/v\d*/" :
-            @$"(/api/v\d*/|{config.ExternalAPIRegex})";
+        string apiRegex = @"/api/v\d*/";
         UrlRouter.Register([@$"^(?!{apiRegex})(?<filePath>.*)$"], async (Session session, string filePath) =>
         {
+            // Logger.Info($"static file request: {filePath}");
             await Task.CompletedTask;
             session.Response.Headers.CacheControl = new CacheControlHeaderValue()
             {
@@ -323,7 +316,10 @@ public class Application
         };
 
         var mainTask = HttpServer.Start();
-        _ = TaskService.ShareServer.Start(UrlRouter);
+        if (config.EnableShareServer)
+        {
+            _ = TaskService.ShareServer.Start(UrlRouter);
+        }
         _ = UrlRouter.Listen(HttpServer, CancellationToken.None);
         OnConfigCompleted.SetResult();
         await mainTask;

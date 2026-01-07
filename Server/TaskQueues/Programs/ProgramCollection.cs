@@ -2,6 +2,7 @@
 using Cangjie.TypeSharp.System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using TidyHPC.Loggers;
 
 namespace Cangjie.TypeSharp.Server.TaskQueues.Programs;
 

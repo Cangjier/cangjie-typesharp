@@ -15,7 +15,7 @@ using TidyHPC.Extensions;
 using TidyHPC.Loggers;
 
 namespace Cangjie.TypeSharp;
-public class TSProgram:IProgram
+public class TSProgram : IProgram
 {
     public static TSScriptFileSystem FileSystem { get; } = new();
 
@@ -23,7 +23,7 @@ public class TSProgram:IProgram
 
     private static ConcurrentDictionary<string, TextContext> TextContextsCache { get; } = new();
 
-    private static Dictionary<string,object> LockMap { get; } = new();
+    private static Dictionary<string, object> LockMap { get; } = new();
 
     private static object lockLockMap = new();
 
@@ -40,7 +40,7 @@ public class TSProgram:IProgram
         }
     }
 
-    public static void GetContext(string filePath,Owner owner,[NotNull]out TextDocument? document,[NotNull]out TextContext? textContext)
+    public static void GetContext(string filePath, Owner owner, [NotNull] out TextDocument? document, [NotNull] out TextContext? textContext)
     {
         lock (GetFileLock(filePath))
         {
@@ -66,34 +66,14 @@ public class TSProgram:IProgram
     /// <param name="script"></param>
     /// <param name="filePath"></param>
     /// <param name="context"></param>
-    public TSProgram(string filePath,string script,Context? context)
+    public TSProgram(string filePath, string script, Context? context)
     {
-        //Stopwatch stopwatch = new();
-        //stopwatch.Start();
-        //TextDocument = new(Owner, script);
-        //TextDocument.FilePath = filePath;
-        //TextContext = new(Owner, TSScriptEngine.Template);
-        //TextContext.Process(TextDocument);
-        //stopwatch.Stop();
-        //Logger.Info($"Text Analyse: {stopwatch.ElapsedMilliseconds}ms");
-        //stopwatch.Restart();
-        //StepContext = new(Owner);
-        //if (context != null)
-        //{
-        //    StepContext.MountVariableSpace(context.getContext);
-        //}
-        //var parseResult = TSScriptEngine.StepEngine.Parse(Owner, StepContext, TextContext.Root.Data, false);
-        //Steps = parseResult.Steps;
-        //stopwatch.Stop();
-        //Logger.Info($"Compile: {stopwatch.ElapsedMilliseconds}ms");
-
         Stopwatch stopwatch = new();
         stopwatch.Start();
         TextDocuments = [];
         TextContexts = [];
         HashSet<string> filePathSet = [];
         StepContext = new(Owner);
-        //stepContext.MountVariableSpace(context.getContext);
         Steps = new(Owner);
         void loadFile(string filePath)
         {
@@ -112,13 +92,28 @@ public class TSProgram:IProgram
                 var from = import.From;
                 if (string.IsNullOrEmpty(from)) continue;
                 if (from.Contains(".tsc")) continue;
-                var fromFilePath = from;
-                if (fromFilePath.EndsWith(".ts") == false)
+                List<string> fromFilePaths = [];
+                fromFilePaths.Add(from);
+                if (from.EndsWith(".ts") == false)
                 {
-                    fromFilePath += "/index.ts";
+                    fromFilePaths.Add(from + "/index.ts");
+                    fromFilePaths.Add(from + ".ts");
                 }
-                fromFilePath = Path.GetFullPath(fromFilePath, Path.GetDirectoryName(filePath) ?? throw new Exception("filePath is null"));
-                loadFile(fromFilePath);
+                bool isFound = false;
+                foreach (var fromFilePath in fromFilePaths)
+                {
+                    var fullFilePath = Path.GetFullPath(fromFilePath, Path.GetDirectoryName(filePath) ?? throw new Exception("filePath is null"));
+                    if (File.Exists(fullFilePath))
+                    {
+                        loadFile(fullFilePath);
+                        isFound = true;
+                        break;
+                    }
+                }
+                if (isFound == false)
+                {
+                    Logger.Info($"File not found: {from}");
+                }
             }
             TextDocuments.Add(document);
             TextContexts.Add(textContext);
@@ -138,7 +133,7 @@ public class TSProgram:IProgram
     /// </summary>
     /// <param name="filePath"></param>
     /// <param name="script"></param>
-    public TSProgram(string filePath, string script):this(filePath, script, null)
+    public TSProgram(string filePath, string script) : this(filePath, script, null)
     {
     }
 

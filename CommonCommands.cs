@@ -15,18 +15,18 @@ public class CommonCommands
     [ArgsIndex] string path,
     [ArgsAliases("--repository")] string? repository = null,
     [ArgsAliases("--application-name")] string? applicationName = null,
-    [ArgsAliases("--use-update")]string? useUpdate = null,
+    [ArgsAliases("--use-update")] string? useUpdate = null,
     [Args] string[]? fullArgs = null)
     {
-        using Context context = new();
+        using Context context = new(Logger.LoggerFile);
         try
         {
-            Logger.SetLoggerFile(context.Logger);
+            // Logger.SetLoggerFile(context.Logger);
             context.args = fullArgs![2..];
             if (File.Exists(path))
             {
                 context.script_path = Path.GetFullPath(path);
-                await TSScriptEngine.RunAsync(context.script_path,File.ReadAllText(context.script_path, Util.UTF8),context);
+                await TSScriptEngine.RunAsync(context.script_path, File.ReadAllText(context.script_path, Util.UTF8), context);
             }
             else if (Directory.Exists(path))
             {
@@ -39,7 +39,7 @@ public class CommonCommands
                     return;
                 }
                 context.script_path = Path.GetFullPath(mainFile);
-                await TSScriptEngine.RunAsync(context.script_path, File.ReadAllText(context.script_path, Util.UTF8),context);
+                await TSScriptEngine.RunAsync(context.script_path, File.ReadAllText(context.script_path, Util.UTF8), context);
             }
             else if (path.StartsWith("http://") || path.StartsWith("https://"))
             {
@@ -60,7 +60,7 @@ public class CommonCommands
                 {
                     gitRepository.ApplicationName = applicationName;
                 }
-                if (useUpdate ==null||useUpdate=="true")
+                if (useUpdate == null || useUpdate == "true")
                 {
                     await gitRepository.Update();
                 }
@@ -78,7 +78,7 @@ public class CommonCommands
                     return;
                 }
                 context.script_path = scriptPath;
-                await TSScriptEngine.RunAsync(context.script_path,File.ReadAllText(context.script_path, Util.UTF8),context);
+                await TSScriptEngine.RunAsync(context.script_path, File.ReadAllText(context.script_path, Util.UTF8), context);
             }
         }
         catch (Exception e)
@@ -89,7 +89,7 @@ public class CommonCommands
             {
                 Console.WriteLine(message);
             }
-            if(e is not RuntimeException<char>)
+            if (e is not RuntimeException<char>)
             {
                 Logger.Error(e);
             }
@@ -134,5 +134,5 @@ public class CommonCommands
         Logger.Info($"local application data: {Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}");
         Logger.Info($"program files: {Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)}");
         Logger.Info($"program files x86: {Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}");
-    } 
+    }
 }

@@ -3,6 +3,7 @@ using TidyHPC.LiteJson;
 using TidyHPC.Loggers;
 using TidyHPC.Queues;
 using Cangjie.TypeSharp.Server.TaskQueues.Tasks;
+using Cangjie.Core.Extensions;
 
 namespace Cangjie.TypeSharp.Server.TaskQueues.Plugins;
 
@@ -564,13 +565,15 @@ public readonly struct PluginInterface(Json target)
         catch (Exception e)
         {
             await processLogger(false);
-            var message = e.GetBaseException().Message;
+            var innerException = e.GetInnerException();
+            var message = innerException?.Message ?? e.GetBaseException().Message;
             var lines = message.Replace("\r", "").Split('\n');
             if (lines.Length > 0)
             {
                 message = lines[0];
             }
-            task.Trace.Error(message, e);
+            Logger.Error(innerException ?? e);
+            task.Trace.Error(message, innerException ?? e);
         }
         progressCompletion?.TrySetResult();
     }
