@@ -281,7 +281,6 @@ public class Application
         UrlRouter.Register([Apis.V2.Tasks.Run.pattern], TaskWebService.Run);
         UrlRouter.Register([Apis.V2.Tasks.RunAsync.pattern], TaskWebService.RunAsync);
         UrlRouter.Register([Apis.V2.Tasks.Query.pattern], TaskWebService.Query);
-        UrlRouter.Register([Apis.V2.Tasks.PluginRunAsync.pattern], TaskWebService.PluginRunAsync);
         UrlRouter.Register([Apis.V2.Tasks.SubscribeProgress.pattern], TaskWebService.SubscribeProgress);
         UrlRouter.Register([Apis.V2.Tasks.UpdateProgress.pattern], TaskWebService.UpdateProgress);
         UrlRouter.Register([Apis.V2.Agents.Server.Register.pattern], AgentServerWebService.Register);

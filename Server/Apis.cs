@@ -122,7 +122,7 @@ public class Apis
             /// <summary>
             /// 运行任务，同步返回
             /// </summary>
-            public static Api Run { get; } = new("/api/v1/tasks/run", "/api/v1/tasks/run");
+            public static Api Run { get; } = new("/api/v1/tasks/run", "/api/v1/tasks/run/(?<pluginName>.*)");
 
             /// <summary>
             /// 发起任务，异步返回

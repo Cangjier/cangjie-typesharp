@@ -28,34 +28,21 @@ public class TaskWebService
     public TaskService TaskService { get; }
 
     /// <summary>
-    /// 发起一个插件任务
-    /// </summary>
-    /// <returns></returns>
-    public async Task<Guid> PluginRunAsync(Session session, string pluginName)
-    {
-        TaskInterface task = Json.NewObject();
-        task.Input = (await session.Cache.GetRequstBodyJson()).Clone();
-        task.Processor.Name = pluginName;
-        task.Processor.Type = ProcessorTypes.Plugin;
-        task.id = Guid.NewGuid();
-        _ = Task.Run(async () =>
-        {
-            await TaskService.Run(task);
-        });
-        return task.id;
-    }
-
-    /// <summary>
     /// 运行任务
     /// </summary>
     /// <param name="session"></param>
     /// <returns></returns>
-    public async Task<NetMessageInterface> Run(Session session)
+    public async Task<NetMessageInterface> Run(Session session, string pluginName)
     {
         NetMessageInterface result = NetMessageInterface.New();
         try
         {
-            TaskInterface task = await session.Cache.GetRequstBodyJson();
+            // TaskInterface task = await session.Cache.GetRequstBodyJson();
+            TaskInterface task = Json.NewObject();
+            task.Input = (await session.Cache.GetRequstBodyJson()).Clone();
+            task.Processor.Name = pluginName;
+            task.Processor.Type = ProcessorTypes.Plugin;
+            task.id = Guid.NewGuid();
             result.data = task;
             await TaskService.Run(task);
             result.success = task.Trace.Success;
