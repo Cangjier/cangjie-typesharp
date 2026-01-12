@@ -62,4 +62,10 @@ public class Server
         ApplicationConfig.PluginsDirectory = directory;
         ApplicationConfig.EnablePlugins = enable;
     }
+
+    public void useSSL(string certificatePath, string certificateKeyPath)
+    {
+        ApplicationConfig.SSLCertificatePath = certificatePath;
+        ApplicationConfig.SSLCertificateKeyPath = certificateKeyPath;
+    }
 }

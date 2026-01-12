@@ -10,6 +10,7 @@ using TidyHPC.Routers.Urls.Responses;
 using Cangjie.TypeSharp.Server.TaskQueues;
 using Cangjie.TypeSharp.Server.WebService;
 using TidyHPC.LiteJson;
+using System.Security.Cryptography.X509Certificates;
 
 
 namespace Cangjie.TypeSharp.Server;
@@ -68,6 +69,11 @@ public class ApplicationConfig()
     /// ssl证书密码
     /// </summary>
     public string SSLCertificatePassword { get; set; } = string.Empty;
+
+    /// <summary>
+    /// ssl证书密钥路径
+    /// </summary>
+    public string SSLCertificateKeyPath { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -172,7 +178,15 @@ public class Application
         }
         if (enableSSL)
         {
-            HttpServer.X509Certificate2 = new(config.SSLCertificatePath, config.SSLCertificatePassword);
+            if (config.SSLCertificateKeyPath != string.Empty)
+            {
+                HttpServer.X509Certificate2 = X509Certificate2.CreateFromPemFile(config.SSLCertificatePath, config.SSLCertificateKeyPath == string.Empty ? null : config.SSLCertificateKeyPath);
+            }
+            else
+            {
+                HttpServer.X509Certificate2 = new(config.SSLCertificatePath, config.SSLCertificatePassword == string.Empty ? null : config.SSLCertificatePassword);
+            }
+
         }
         //配置默认编码
         UrlResponse.DefaultContentEncoding = "gzip";
