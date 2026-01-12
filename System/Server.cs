@@ -2,6 +2,8 @@
 using TidyHPC.LiteJson;
 using TidyHPC.Routers.Urls.Responses;
 using Cangjie.TypeSharp.Server;
+using TidyHPC.ASP.LiteKestrelServers;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Cangjie.TypeSharp.System;
 
@@ -24,21 +26,9 @@ public class Server
 
     public TaskCompletionSource onConfigCompleted => Application.OnConfigCompleted;
 
-    public async Task start(Json port)
+    public async Task start(Json ports)
     {
-        List<int> ports = [];
-        if (port.IsArray)
-        {
-            foreach (var item in port.GetArrayEnumerable())
-            {
-                ports.Add(item.ToInt32);
-            }
-        }
-        else
-        {
-            ports.Add(port.ToInt32);
-        }
-        ApplicationConfig.ServerPorts = ports.ToArray();
+        listen(ports);
         await Application.Start(ApplicationConfig);
     }
 
@@ -63,9 +53,45 @@ public class Server
         ApplicationConfig.EnablePlugins = enable;
     }
 
-    public void useSSL(string certificatePath, string certificateKeyPath)
+    public void listen(Json ports)
     {
-        ApplicationConfig.SSLCertificatePath = certificatePath;
-        ApplicationConfig.SSLCertificateKeyPath = certificateKeyPath;
+        if (ports.IsArray)
+        {
+            foreach (var item in ports.GetArrayEnumerable())
+            {
+                int port = item.ToInt32;
+                if (ApplicationConfig.ServerPorts.ContainsKey(port))
+                {
+                    continue;
+                }
+                ApplicationConfig.ServerPorts.Add(port, new LiteKestrelServer.PortConfig { Port = port });
+            }
+        }
+        else
+        {
+            int port = ports.ToInt32;
+            if (ApplicationConfig.ServerPorts.ContainsKey(port))
+            {
+                return;
+            }
+            ApplicationConfig.ServerPorts.Add(port, new LiteKestrelServer.PortConfig { Port = port });
+        }
     }
+
+    public void useSSL(int port, string certificatePath, string certificateKeyPath)
+    {
+        if (ApplicationConfig.ServerPorts.TryGetValue(port, out var portConfig) == false)
+        {
+            portConfig = new LiteKestrelServer.PortConfig { Port = port };
+            ApplicationConfig.ServerPorts.Add(port, portConfig);
+        }
+        portConfig.X509Certificate2 = X509Certificate2.CreateFromPemFile(certificatePath, certificateKeyPath);
+    }
+
+    public void useHttpsRedirect()
+    {
+        ApplicationConfig.EnableHttpsRedirect = true;
+    }
+
+
 }

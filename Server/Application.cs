@@ -11,6 +11,7 @@ using Cangjie.TypeSharp.Server.TaskQueues;
 using Cangjie.TypeSharp.Server.WebService;
 using TidyHPC.LiteJson;
 using System.Security.Cryptography.X509Certificates;
+using Cangjie.TypeSharp.System;
 
 
 namespace Cangjie.TypeSharp.Server;
@@ -23,7 +24,7 @@ public class ApplicationConfig()
     /// <summary>
     /// Http服务器地址
     /// </summary>
-    public int[] ServerPorts { get; set; } = [];
+    public Dictionary<int, LiteKestrelServer.PortConfig> ServerPorts { get; set; } = [];
 
     /// <summary>
     /// 是否启用所有网络设备
@@ -61,19 +62,9 @@ public class ApplicationConfig()
     public string? StaticResourcePath { get; set; } = null;
 
     /// <summary>
-    /// ssl证书路径
+    /// 是否启用https重定向
     /// </summary>
-    public string SSLCertificatePath { get; set; } = string.Empty;
-
-    /// <summary>
-    /// ssl证书密码
-    /// </summary>
-    public string SSLCertificatePassword { get; set; } = string.Empty;
-
-    /// <summary>
-    /// ssl证书密钥路径
-    /// </summary>
-    public string SSLCertificateKeyPath { get; set; } = string.Empty;
+    public bool EnableHttpsRedirect { get; set; } = false;
 }
 
 /// <summary>
@@ -158,35 +149,28 @@ public class Application
         TaskService.ShareServer.UrlPrefix = config.ShareServerUrlPrefix;
         //配置Http服务器
         HttpServer.EnableAnyIP = config.EnableAnyIP;
-        HttpServer.ListenPorts.AddRange(config.ServerPorts);
-        var enableSSL = File.Exists(config.SSLCertificatePath);
-        Logger.Info("Server starting...");
-        for (int i = 0; i < config.ServerPorts.Length; i++)
+        // HttpServer.ListenPorts.AddRange(config.ServerPorts);
+        foreach (var port in config.ServerPorts)
         {
-            Logger.Info($"Server started at {i + 1,3}/{config.ServerPorts.Length} {config.ServerPorts[i]}");
+            HttpServer.ListenPorts.TryAdd(port.Key, port.Value);
+        }
+        Logger.Info("Server starting...");
+        int portConfigIndex = -1;
+        foreach (var portConfig in config.ServerPorts.Values)
+        {
+            portConfigIndex++;
+            Logger.Info($"Server started at {portConfigIndex + 1,3}/{config.ServerPorts.Count} {portConfig.Port}");
             if (TaskService.CurrentServerUrlPrefix == string.Empty)
             {
-                if (enableSSL)
+                if (portConfig.X509Certificate2 != null)
                 {
-                    TaskService.CurrentServerUrlPrefix = $"https://127.0.0.1:{config.ServerPorts[i]}";
+                    TaskService.CurrentServerUrlPrefix = $"https://127.0.0.1:{portConfig.Port}";
                 }
                 else
                 {
-                    TaskService.CurrentServerUrlPrefix = $"http://127.0.0.1:{config.ServerPorts[i]}";
+                    TaskService.CurrentServerUrlPrefix = $"http://127.0.0.1:{portConfig.Port}";
                 }
             }
-        }
-        if (enableSSL)
-        {
-            if (config.SSLCertificateKeyPath != string.Empty)
-            {
-                HttpServer.X509Certificate2 = X509Certificate2.CreateFromPemFile(config.SSLCertificatePath, config.SSLCertificateKeyPath == string.Empty ? null : config.SSLCertificateKeyPath);
-            }
-            else
-            {
-                HttpServer.X509Certificate2 = new(config.SSLCertificatePath, config.SSLCertificatePassword == string.Empty ? null : config.SSLCertificatePassword);
-            }
-
         }
         //配置默认编码
         UrlResponse.DefaultContentEncoding = "gzip";
