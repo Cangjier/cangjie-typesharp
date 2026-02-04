@@ -93,7 +93,7 @@ public class TaskCollection
         {
             TaskQueue.Enqueue("main", task);
         }
-        await TaskService.TaskCompletion.Add(task.id, TimeSpan.FromDays(1)).Task;
+        await TaskService.TaskCompletion.Add(task.id).Task;
     }
 
     /// <summary>
@@ -129,7 +129,7 @@ public class TaskCollection
         {
             TaskQueue.Enqueue("main", task);
         }
-        await TaskService.TaskCompletion.Add(task.id, TimeSpan.FromDays(1)).Task;
+        await TaskService.TaskCompletion.Add(task.id).Task;
     }
 
     /// <summary>
@@ -139,9 +139,8 @@ public class TaskCollection
     public void CompleteTask(TaskInterface task)
     {
         Logger.Info($"Task {task.id} is completed");
-        TaskService.TaskCompletion.Complete(task.id, null);
         task.Status = task.Output.IsNull ? TaskStatuses.Failed : TaskStatuses.Completed;
-
+        TaskService.TaskCompletion.Complete(task.id, null);
         // 任务完成后，超过10分钟的任务，将会从任务列表中移除，后续将无法被查询
         DiscreteScheduler.AddTask(TimeSpan.FromMinutes(10), async () =>
         {

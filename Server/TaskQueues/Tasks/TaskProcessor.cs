@@ -37,7 +37,7 @@ public class TaskProcessor : IProcessor<TaskInterface>
             if (task.Processor.Type == ProcessorTypes.Plugin)
             {
                 //首先尝试从本地插件中运行任务
-                if (pluginCollection.TryGetPlugin(task.Processor.Name,out var plugin))
+                if (pluginCollection.TryGetPlugin(task.Processor.Name, out var plugin))
                 {
                     Logger.Info($"Plugin {plugin.Name} is processng task {task.id}");
                     await plugin.Run(TaskService, task);
@@ -55,7 +55,7 @@ public class TaskProcessor : IProcessor<TaskInterface>
                             Logger.Info($"Agent {agent.ID} has completed task {task.id}");
                             break;
                         }
-                        catch(Exception e)
+                        catch (Exception e)
                         {
                             Logger.Error(e);
                             if (agentCollection.TryGetAgent(task, out agent))
@@ -90,11 +90,19 @@ public class TaskProcessor : IProcessor<TaskInterface>
         }
         catch (Exception e)
         {
-            task.Trace.Error(null,e);
+            task.Trace.Error(null, e);
         }
         finally
         {
-            TaskService.TaskCollection.CompleteTask(task);
+            try
+            {
+                TaskService.TaskCollection.CompleteTask(task);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+            }
+
         }
     }
 }
