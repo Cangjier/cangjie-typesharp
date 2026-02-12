@@ -139,7 +139,7 @@ public class Agent
         task.Target.Set("url", Apis.V2.Agents.Client.Run);
         task.Target.Set("response", Apis.V2.Response);
         task.Target.Set("websocket_session_id", websocket_session_id);
-        var completionSource = TaskService.TaskCompletion.Add(websocket_session_id, TimeSpan.FromHours(24));
+        var completionSource = TaskService.TaskCompletion.Add(websocket_session_id);
         try
         {
             await WebsocketResponse.SendMessage(task.ToString());
@@ -153,7 +153,7 @@ public class Agent
         }
         try
         {
-            var taskResult = await completionSource.Task;
+            var taskResult = await completionSource.Task.WaitAsync(TimeSpan.FromHours(24));
             if (taskResult is NetMessageInterface msg)
             {
                 TaskInterface outputTask = msg.data;
@@ -212,7 +212,7 @@ public class Agent
         request.Set("response", Apis.V2.Response);
         request.Set("websocket_session_id", websocket_session_id);
         request.Set("packageName", packageName);
-        var completionSource = TaskService.TaskCompletion.Add(websocket_session_id, TimeSpan.FromHours(24));
+        var completionSource = TaskService.TaskCompletion.Add(websocket_session_id);
         try
         {
             await WebsocketResponse.SendMessage(request.ToString());
@@ -226,7 +226,7 @@ public class Agent
         }
         try
         {
-            var taskResult = await completionSource.Task;
+            var taskResult = await completionSource.Task.WaitAsync(TimeSpan.FromHours(24));
             if (taskResult is NetMessageInterface msg)
             {
                 if (msg.data.IsTrue)

@@ -177,9 +177,9 @@ public class ShareServer
         body["websocket_session_id"] = websocket_session_id;
         body["agentId"] = id;
         body["plugins"] = pluginsArray.Clone();
-        var task = TaskService.TaskCompletion.Add(websocket_session_id, TimeSpan.FromSeconds(30));
+        var task = TaskService.TaskCompletion.Add(websocket_session_id);
         await WebsocketClient.SendMessage(body.ToString());
-        var result = await task.Task;
+        var result = await task.Task.WaitAsync(TimeSpan.FromSeconds(30));
         if (result is NetMessageInterface msg)
         {
             if (msg.success)
@@ -211,9 +211,9 @@ public class ShareServer
         body["agentId"] = id;
         body["hostName"] = Environment.MachineName;
         body["performance"] = performance.Clone();
-        var task = TaskService.TaskCompletion.Add(websocket_session_id, TimeSpan.FromSeconds(30));
+        var task = TaskService.TaskCompletion.Add(websocket_session_id);
         await WebsocketClient.SendMessage(body.ToString());
-        var result = await task.Task;
+        var result = await task.Task.WaitAsync(TimeSpan.FromSeconds(30));
         if (result is NetMessageInterface msg)
         {
             if (msg.success)
@@ -245,9 +245,9 @@ public class ShareServer
         body["agentId"] = id;
         body["hostName"] = Environment.MachineName;
         body["plugins"] = plugins.Clone();
-        var task = TaskService.TaskCompletion.Add(websocket_session_id, TimeSpan.FromSeconds(30));
+        var task = TaskService.TaskCompletion.Add(websocket_session_id);
         await WebsocketClient.SendMessage(body.ToString());
-        var result = await task.Task;
+        var result = await task.Task.WaitAsync(TimeSpan.FromSeconds(30));
         if (result is NetMessageInterface msg)
         {
             if (msg.success)

@@ -57,7 +57,7 @@ public class TaskCollection
     /// </summary>
     private DiscreteScheduler DiscreteScheduler { get; } = new();
 
-    private ConcurrentDictionary<string,bool> IsQueueSetConcurrent { get; } = new();
+    private ConcurrentDictionary<string, bool> IsQueueSetConcurrent { get; } = new();
 
     private void SetQueueConcurrent(string queue, int concurrent)
     {
@@ -81,6 +81,7 @@ public class TaskCollection
         Logger.Info($"Task {task.id} is running");
         CacheTasks.TryAdd(task.id, task);
         task.Status = TaskStatuses.Pending;
+        var waitTask = TaskService.TaskCompletion.Add(task.id).Task;
         if (TaskService.TryGetPlugin(task.Processor.Name, out var plugin))
         {
             if (plugin.Queue != "main" && plugin.Concurrent != -1)
@@ -93,7 +94,7 @@ public class TaskCollection
         {
             TaskQueue.Enqueue("main", task);
         }
-        await TaskService.TaskCompletion.Add(task.id).Task;
+        await waitTask;
     }
 
     /// <summary>
@@ -117,6 +118,7 @@ public class TaskCollection
         });
         CacheTasks.TryAdd(task.id, task);
         task.Status = TaskStatuses.Pending;
+        var waitTask = TaskService.TaskCompletion.Add(task.id).Task;
         if (TaskService.TryGetPlugin(task.Processor.Name, out var plugin))
         {
             if (plugin.Queue != "main" && plugin.Concurrent != -1)
@@ -129,7 +131,7 @@ public class TaskCollection
         {
             TaskQueue.Enqueue("main", task);
         }
-        await TaskService.TaskCompletion.Add(task.id).Task;
+        await waitTask;
     }
 
     /// <summary>
