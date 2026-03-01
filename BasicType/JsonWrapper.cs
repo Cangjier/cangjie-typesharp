@@ -35,10 +35,10 @@ public struct JsonWrapper
         return result;
     }
 
-    public List<object> map(Func<Json, Json , Json> onItem)
+    public List<object> map(Func<Json, Json, Json> onItem)
     {
         List<object> result = [];
-        Target.ForeachArray((index,item) =>
+        Target.ForeachArray((index, item) =>
         {
             result.Add(onItem(item, index));
         });
@@ -163,6 +163,19 @@ public struct JsonWrapper
         return -1;
     }
 
+    public int lastIndexOf(Json value, Json start)
+    {
+        if (Target.IsString && value.IsString)
+        {
+            return Target.AsString.LastIndexOf(value.AsString, start.ToInt32);
+        }
+        else if (Target.IsArray)
+        {
+            return Target.LastIndexOf(value, start.ToInt32);
+        }
+        return -1;
+    }
+
     public bool includes(Json value)
     {
         return Target.Contains(value);
@@ -189,7 +202,7 @@ public struct JsonWrapper
                     return Target.AsString.Split(sepraratorString).Select(item => (object)item).ToList();
                 }
             }
-            else if(separator.Is<Regex>())
+            else if (separator.Is<Regex>())
             {
                 var regex = separator.As<Regex>();
                 return regex.Split(Target.AsString).Select(item => (object)item).ToList();
