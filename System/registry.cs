@@ -14,9 +14,10 @@ public class registry
     /// 获取键值
     /// </summary>
     /// <param name="registryPath"></param>
+    /// <param name="key"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public static registryValue? get(string registryPath)
+    public static registryValue? get(string registryPath, string? key)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -31,11 +32,11 @@ public class registry
                 "HKEY_CURRENT_CONFIG" => RegistryHive.CurrentConfig,
                 _ => throw new ArgumentException("Invalid root key")
             }, RegistryView.Default);
-            using var key = reg.OpenSubKey(path);
-            if (key != null)
+            using var registryKey = reg.OpenSubKey(path);
+            if (registryKey != null)
             {
-                var value = key.GetValue(null);
-                var type = key.GetValueKind(null);
+                var value = registryKey.GetValue(key);
+                var type = registryKey.GetValueKind(key);
                 return new registryValue
                 {
                     value = value?.ToString() ?? string.Empty,
@@ -53,13 +54,27 @@ public class registry
         }
     }
 
+
+    /// <summary>
+    /// 获取键值
+    /// </summary>
+    /// <param name="registryPath"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public static registryValue? get(string registryPath)
+    {
+        return get(registryPath, null);
+    }
+
+
     /// <summary>
     /// 设置键值
     /// </summary>
     /// <param name="registryPath"></param>
+    /// <param name="key"></param>
     /// <param name="value"></param>
     /// <exception cref="ArgumentException"></exception>
-    public static void set(string registryPath, registryValue? value)
+    public static void set(string registryPath, string? key, registryValue? value)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -74,10 +89,10 @@ public class registry
                 "HKEY_CURRENT_CONFIG" => RegistryHive.CurrentConfig,
                 _ => throw new ArgumentException("Invalid root key")
             }, RegistryView.Default);
-            using var key = reg.CreateSubKey(path);
-            if (key != null && value!=null)
+            using var registryKey = reg.CreateSubKey(path);
+            if (registryKey != null && value != null)
             {
-                key.SetValue(null, value.type.ToLower() switch
+                registryKey.SetValue(key, value.type.ToLower() switch
                 {
                     "string" => value.value,
                     "expandstring" => value.value,
@@ -99,4 +114,15 @@ public class registry
             }
         }
     }
+
+    /// <summary>
+    /// 设置键值
+    /// </summary>
+    /// <param name="registryPath"></param>
+    /// <param name="value"></param>
+    public static void set(string registryPath, registryValue? value)
+    {
+        set(registryPath, null, value);
+    }
+
 }

@@ -335,6 +335,12 @@ public class TSScriptEngine
                 Logger.Info($"File not found: {filePath}");
                 return;
             }
+            if (filePath.EndsWith(".dll"))
+            {
+                Logger.Info($"Load DLL: {filePath}");
+                Assembly.LoadFrom(filePath);
+                return;
+            }
             var fileContent = await fileSystem.GetFileContentAsync(filePath);
             TextDocument document = new(owner, fileContent);
             document.FilePath = filePath;
@@ -351,7 +357,7 @@ public class TSScriptEngine
 
                 List<string> fromFilePaths = [];
                 fromFilePaths.Add(from);
-                if (from.EndsWith(".ts") == false)
+                if (from.EndsWith(".ts") == false && from.EndsWith(".dll") == false)
                 {
                     fromFilePaths.Add(from + "/index.ts");
                     fromFilePaths.Add(from + ".ts");

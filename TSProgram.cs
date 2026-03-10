@@ -10,6 +10,7 @@ using Cangjie.TypeSharp.System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using TidyHPC.Common;
 using TidyHPC.Extensions;
 using TidyHPC.Loggers;
@@ -83,6 +84,11 @@ public class TSProgram : IProgram
                 Logger.Info($"File not found: {filePath}");
                 return;
             }
+            if (filePath.EndsWith(".dll"))
+            {
+                Assembly.LoadFrom(filePath);
+                return;
+            }
             GetContext(filePath, Owner, out var document, out var textContext);
             stopwatch.Stop();
             Logger.Info($"Text Analyse: {stopwatch.ElapsedMilliseconds}ms, {filePath}");
@@ -94,7 +100,7 @@ public class TSProgram : IProgram
                 if (from.Contains(".tsc")) continue;
                 List<string> fromFilePaths = [];
                 fromFilePaths.Add(from);
-                if (from.EndsWith(".ts") == false)
+                if (from.EndsWith(".ts") == false && from.EndsWith(".dll") == false)
                 {
                     fromFilePaths.Add(from + "/index.ts");
                     fromFilePaths.Add(from + ".ts");
