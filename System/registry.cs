@@ -35,6 +35,10 @@ public class registry
             using var registryKey = reg.OpenSubKey(path);
             if (registryKey != null)
             {
+                if (registryKey.GetValueNames().Contains(key) == false)
+                {
+                    return null;
+                }
                 var value = registryKey.GetValue(key);
                 var type = registryKey.GetValueKind(key);
                 return new registryValue
