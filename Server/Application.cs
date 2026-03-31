@@ -79,7 +79,10 @@ public class Application
     {
         TaskService = new();
         HttpServer = new();
-        UrlRouter = new();
+        UrlRouter = new()
+        {
+            RequestBodyJsonDeserializeTypeMode = JsonDeserializeTypeMode.DictionaryAndList
+        };
 
         CommonWebService = new(TaskService);
         TaskWebService = new(TaskService);

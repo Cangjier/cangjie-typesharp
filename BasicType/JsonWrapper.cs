@@ -20,6 +20,11 @@ public struct JsonWrapper
 
     public Json Target { get; }
 
+    public Json ToArray()
+    {
+        return Target.GetArrayEnumerable().Select(item => item.Node).ToList();
+    }
+
     public void forEach(Action<Json> onItem)
     {
         Target.ForeachArray(item => onItem(item));

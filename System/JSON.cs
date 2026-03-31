@@ -8,13 +8,13 @@ public class JSON
         return new Json(value).ToString();
     }
 
-    public static string stringify(object? value, string[] replacer,int space)
+    public static string stringify(object? value, string[] replacer, int space)
     {
         return new Json(value).ToString(space == 0 ? false : true);
     }
 
     public static Json parse(string stringValue)
     {
-        return Json.Parse(stringValue);
+        return Json.Parse(stringValue, JsonDeserializeTypeMode.DictionaryAndList);
     }
 }
