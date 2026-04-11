@@ -4,6 +4,8 @@ namespace Cangjie.TypeSharp.System;
 
 public class Math
 {
+    public static double PI = global::System.Math.PI;
+
     public static Json floor(Json x)
     {
         return (int)SystemMath.Floor(x.AsNumber);

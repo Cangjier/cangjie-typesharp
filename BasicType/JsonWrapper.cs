@@ -345,11 +345,19 @@ public struct JsonWrapper
         else throw new InvalidOperationException("JsonWrapper: toString only support number type");
     }
 
-    public Json sort(Func<Json, Json, int> compare)
+    public Json sort(Func<Json, Json, double> compare)
     {
         if (Target.IsArray)
         {
-            Target.Sort((a, b) => compare(a, b));
+            Target.Sort((a, b) =>
+            {
+                var reuslt = compare(a, b);
+                if (reuslt == 0) return 0;
+                else if (reuslt > 1) return (int)reuslt;
+                else if (reuslt < 1) return (int)reuslt;
+                else if (reuslt > 0) return 1;
+                else return -1;
+            });
             return Target;
         }
         else
