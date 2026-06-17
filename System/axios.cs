@@ -12,7 +12,7 @@ namespace Cangjie.TypeSharp.System;
 /// <summary>
 /// 模拟axios
 /// </summary>
-public class Axios:IDisposable
+public class Axios : IDisposable
 {
     public Axios(Context context)
     {
@@ -25,7 +25,18 @@ public class Axios:IDisposable
     private HttpClient HttpClient { get; set; } = new HttpClient(new HttpClientHandler()
     {
         ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true
-    });
+    })
+    {
+        Timeout = TimeSpan.FromDays(8)
+    };
+
+    private HttpClient DefaultHttpClient { get; set; } = new HttpClient(new HttpClientHandler()
+    {
+        ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true
+    })
+    {
+        Timeout = TimeSpan.FromDays(8)
+    };
 
     public void setProxy(string proxy)
     {
@@ -51,7 +62,7 @@ public class Axios:IDisposable
     public void setDefaultProxy()
     {
         var gitProxy = Util.GetGitProxy();
-        if (string.IsNullOrEmpty(gitProxy)==false)
+        if (string.IsNullOrEmpty(gitProxy) == false)
         {
             setProxy(gitProxy);
             return;
@@ -79,23 +90,33 @@ public class Axios:IDisposable
     public async Task<axiosResponse> get(string url, axiosConfig? config)
     {
         axiosResponse result = new();
-        url = config?.getUrl(url) ?? url;
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
-        config?.setRequest(request);
-        HttpResponseMessage? response;
-        if (config?.useDefaultProxy == true)
+        try
         {
-            response = await HttpClient.SendAsync(request);
-            await result.setResponse(response, config,context);
-        }
-        else
-        {
-            using var client = new HttpClient(new HttpClientHandler()
+            url = config?.getUrl(url) ?? url;
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            config?.setRequest(request);
+            HttpResponseMessage? response;
+            if (config?.useDefaultProxy == true)
             {
-                Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
-            });
-            response = await client.SendAsync(request);
-            await result.setResponse(response, config, context);
+                response = await HttpClient.SendAsync(request);
+                await result.setResponse(response, config, context);
+            }
+            else
+            {
+                using var client = new HttpClient(new HttpClientHandler()
+                {
+                    Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy)
+                });
+                client.Timeout = TimeSpan.FromDays(8);
+                response = await client.SendAsync(request);
+                await result.setResponse(response, config, context);
+            }
+
+        }
+        catch (Exception ex)
+        {
+            result.status = 500;
+            result.statusText = ex.Message;
         }
         return result;
     }
@@ -103,23 +124,33 @@ public class Axios:IDisposable
     public async Task<axiosResponse> delete(string url, axiosConfig? config)
     {
         axiosResponse result = new();
-        url = config?.getUrl(url) ?? url;
-        var request = new HttpRequestMessage(HttpMethod.Delete, url);
-        config?.setRequest(request);
-        HttpResponseMessage? response;
-        if (config?.useDefaultProxy == true)
+        try
         {
-            response = await HttpClient.SendAsync(request);
-            await result.setResponse(response, config, context);
-        }
-        else
-        {
-            using var client = new HttpClient(new HttpClientHandler()
+            url = config?.getUrl(url) ?? url;
+            var request = new HttpRequestMessage(HttpMethod.Delete, url);
+            config?.setRequest(request);
+            HttpResponseMessage? response;
+            if (config?.useDefaultProxy == true)
             {
-                Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
-            });
-            response = await client.SendAsync(request);
-            await result.setResponse(response, config, context);
+                response = await HttpClient.SendAsync(request);
+                await result.setResponse(response, config, context);
+            }
+            else
+            {
+                using var client = new HttpClient(new HttpClientHandler()
+                {
+                    Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
+                });
+                client.Timeout = TimeSpan.FromDays(8);
+                response = await client.SendAsync(request);
+                await result.setResponse(response, config, context);
+            }
+
+        }
+        catch (Exception ex)
+        {
+            result.status = 500;
+            result.statusText = ex.Message;
         }
         return result;
     }
@@ -127,35 +158,44 @@ public class Axios:IDisposable
     public async Task<axiosResponse> post(string url, Json data, axiosConfig? config)
     {
         axiosResponse result = new();
-        url = config?.getUrl(url) ?? url;
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
-        if (data.Is<byte[]>())
+        try
         {
-            request.Content = new ByteArrayContent(data.As<byte[]>());
-        }
-        else if (data.Is<Stream>())
-        {
-            request.Content = new StreamContent(data.As<Stream>());
-        }
-        else
-        {
-            request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
-        }
-        config?.setRequest(request);
-        HttpResponseMessage? response;
-        if (config?.useDefaultProxy == true)
-        {
-            response = await HttpClient.SendAsync(request);
-            await result.setResponse(response, config, context);
-        }
-        else
-        {
-            using var client = new HttpClient(new HttpClientHandler()
+            url = config?.getUrl(url) ?? url;
+            var request = new HttpRequestMessage(HttpMethod.Post, url);
+            if (data.Is<byte[]>())
             {
-                Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
-            });
-            response = await client.SendAsync(request);
-            await result.setResponse(response, config, context);
+                request.Content = new ByteArrayContent(data.As<byte[]>());
+            }
+            else if (data.Is<Stream>())
+            {
+                request.Content = new StreamContent(data.As<Stream>());
+            }
+            else
+            {
+                request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
+            }
+            config?.setRequest(request);
+            HttpResponseMessage? response;
+            if (config?.useDefaultProxy == true)
+            {
+                response = await HttpClient.SendAsync(request);
+                await result.setResponse(response, config, context);
+            }
+            else
+            {
+                using var client = new HttpClient(new HttpClientHandler()
+                {
+                    Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
+                });
+                client.Timeout = TimeSpan.FromDays(8);
+                response = await client.SendAsync(request);
+                await result.setResponse(response, config, context);
+            }
+        }
+        catch (Exception ex)
+        {
+            result.status = 500;
+            result.statusText = ex.Message;
         }
         return result;
     }
@@ -168,31 +208,40 @@ public class Axios:IDisposable
     public async Task<axiosResponse> put(string url, Json data, axiosConfig? config)
     {
         axiosResponse result = new();
-        url = config?.getUrl(url) ?? url;
-        var request = new HttpRequestMessage(HttpMethod.Put, url);
-        if (data.Is<byte[]>())
+        try
         {
-            request.Content = new ByteArrayContent(data.As<byte[]>());
-        }
-        else
-        {
-            request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
-        }
-        config?.setRequest(request);
-        HttpResponseMessage? response;
-        if (config?.useDefaultProxy == true)
-        {
-            response = await HttpClient.SendAsync(request);
-            await result.setResponse(response, config, context);
-        }
-        else
-        {
-            using var client = new HttpClient(new HttpClientHandler()
+            url = config?.getUrl(url) ?? url;
+            var request = new HttpRequestMessage(HttpMethod.Put, url);
+            if (data.Is<byte[]>())
             {
-                Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
-            });
-            response = await client.SendAsync(request);
-            await result.setResponse(response, config, context);
+                request.Content = new ByteArrayContent(data.As<byte[]>());
+            }
+            else
+            {
+                request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
+            }
+            config?.setRequest(request);
+            HttpResponseMessage? response;
+            if (config?.useDefaultProxy == true)
+            {
+                response = await HttpClient.SendAsync(request);
+                await result.setResponse(response, config, context);
+            }
+            else
+            {
+                using var client = new HttpClient(new HttpClientHandler()
+                {
+                    Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
+                });
+                client.Timeout = TimeSpan.FromDays(8);
+                response = await client.SendAsync(request);
+                await result.setResponse(response, config, context);
+            }
+        }
+        catch (Exception ex)
+        {
+            result.status = 500;
+            result.statusText = ex.Message;
         }
         return result;
     }
@@ -205,31 +254,40 @@ public class Axios:IDisposable
     public async Task<axiosResponse> patch(string url, Json data, axiosConfig? config)
     {
         axiosResponse result = new();
-        url = config?.getUrl(url) ?? url;
-        var request = new HttpRequestMessage(new HttpMethod("PATCH"), url);
-        if (data.Is<byte[]>())
+        try
         {
-            request.Content = new ByteArrayContent(data.As<byte[]>());
-        }
-        else
-        {
-            request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
-        }
-        config?.setRequest(request);
-        HttpResponseMessage? response;
-        if (config?.useDefaultProxy == true)
-        {
-            response = await HttpClient.SendAsync(request);
-            await result.setResponse(response, config, context);
-        }
-        else
-        {
-            using var client = new HttpClient(new HttpClientHandler()
+            url = config?.getUrl(url) ?? url;
+            var request = new HttpRequestMessage(new HttpMethod("PATCH"), url);
+            if (data.Is<byte[]>())
             {
-                Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
-            });
-            response = await client.SendAsync(request);
-            await result.setResponse(response, config, context);
+                request.Content = new ByteArrayContent(data.As<byte[]>());
+            }
+            else
+            {
+                request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");
+            }
+            config?.setRequest(request);
+            HttpResponseMessage? response;
+            if (config?.useDefaultProxy == true)
+            {
+                response = await HttpClient.SendAsync(request);
+                await result.setResponse(response, config, context);
+            }
+            else
+            {
+                using var client = new HttpClient(new HttpClientHandler()
+                {
+                    Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
+                });
+                client.Timeout = TimeSpan.FromDays(8);
+                response = await client.SendAsync(request);
+                await result.setResponse(response, config, context);
+            }
+        }
+        catch (Exception ex)
+        {
+            result.status = 500;
+            result.statusText = ex.Message;
         }
         return result;
     }
@@ -254,7 +312,7 @@ public class Axios:IDisposable
         });
     }
 
-    public async Task<string> download(string url,string path)
+    public async Task<string> download(string url, string path)
     {
         return await download(url, fileName => path);
     }
@@ -267,7 +325,7 @@ public class Axios:IDisposable
         });
     }
 
-    public async Task<string> download(string url,Func<string?, string> onPath,Action<long, long?> onProgress)
+    public async Task<string> download(string url, Func<string?, string> onPath, Action<long, long?> onProgress)
     {
         var response = await HttpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
@@ -335,7 +393,7 @@ public class axiosResponse
 
     public string statusText { get; set; } = "";
 
-    public async Task setResponse(HttpResponseMessage response,axiosConfig? config,Context context)
+    public async Task setResponse(HttpResponseMessage response, axiosConfig? config, Context context)
     {
         status = (int)response.StatusCode;
         statusText = response.ReasonPhrase ?? string.Empty;
