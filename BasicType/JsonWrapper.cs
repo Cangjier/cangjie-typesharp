@@ -757,6 +757,7 @@ public struct JsonWrapper
             {
                 matchResult.Set("groups", groups);
             }
+            matchResult["length"] = matchResult.Count;
         }
 
         return matchResult;
