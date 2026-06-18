@@ -3,7 +3,7 @@ using Cangjie.TypeSharp.System;
 using TidyHPC.LiteJson;
 using TidyHPC.Routers;
 
-namespace Cangjie.TypeSharp.Cli;
+namespace Cangjie.TypeSharp;
 
 /// <summary>
 /// Api Commands
@@ -35,7 +35,7 @@ public class ApiCommands
         {
             inputJson.Set("UrlWithQueryParameters", request.UrlWithQueryParameters);
         }
-        string? requestPath = null;
+        string? requestPath;
         if (outputPath != null)
         {
             requestPath = Path.Combine(Path.GetDirectoryName(outputPath) ?? "", $"{Path.GetFileNameWithoutExtension(outputPath)}-request.json");

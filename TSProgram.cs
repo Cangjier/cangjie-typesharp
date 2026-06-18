@@ -16,6 +16,7 @@ using TidyHPC.Extensions;
 using TidyHPC.Loggers;
 
 namespace Cangjie.TypeSharp;
+
 public class TSProgram : IProgram
 {
     public static TSScriptFileSystem FileSystem { get; } = new();
@@ -37,11 +38,13 @@ public class TSProgram : IProgram
                 obj = new object();
                 LockMap[filePath] = obj;
             }
+
             return obj;
         }
     }
 
-    public static void GetContext(string filePath, Owner owner, [NotNull] out TextDocument? document, [NotNull] out TextContext? textContext)
+    public static void GetContext(string filePath, Owner owner, [NotNull] out TextDocument? document,
+        [NotNull] out TextContext? textContext)
     {
         lock (GetFileLock(filePath))
         {
@@ -52,6 +55,7 @@ public class TSProgram : IProgram
                 document.FilePath = filePath;
                 TextDocumentsCache.TryAdd(filePath, document);
             }
+
             if (TextContextsCache.TryGetValue(filePath, out textContext) == false)
             {
                 textContext = new(owner, TSScriptEngine.Template);
@@ -61,13 +65,61 @@ public class TSProgram : IProgram
         }
     }
 
+    public static void GetContext(string filePath, Owner owner, Dictionary<string, string>? sources,
+        [NotNull] out TextDocument? document,
+        [NotNull] out TextContext? textContext)
+    {
+        lock (GetFileLock(filePath))
+        {
+            if (sources != null && sources.TryGetValue(filePath, out var source))
+            {
+                var cacheKey = $"{filePath}/{Util.ComputeMD5Hash((source))}";
+                if (TextDocumentsCache.TryGetValue(cacheKey, out document) == false)
+                {
+                    document = new(owner, source);
+                    document.FilePath = filePath;
+                    TextDocumentsCache.TryAdd(cacheKey, document);
+                }
+
+                if (TextContextsCache.TryGetValue(cacheKey, out textContext) == false)
+                {
+                    textContext = new(owner, TSScriptEngine.Template);
+                    textContext.Process(document);
+                    TextContextsCache.TryAdd(cacheKey, textContext);
+                }
+            }
+            else
+            {
+                if (TextDocumentsCache.TryGetValue(filePath, out document) == false)
+                {
+                    var fileContent = FileSystem.GetFileContent(filePath);
+                    document = new(owner, fileContent);
+                    document.FilePath = filePath;
+                    TextDocumentsCache.TryAdd(filePath, document);
+                }
+
+                if (TextContextsCache.TryGetValue(filePath, out textContext) == false)
+                {
+                    textContext = new(owner, TSScriptEngine.Template);
+                    textContext.Process(document);
+                    TextContextsCache.TryAdd(filePath, textContext);
+                }
+            }
+        }
+    }
+
+
+    public TSProgram(string filePath) : this(filePath, null, null)
+    {
+    }
+
     /// <summary>
     /// 编译程序
     /// </summary>
     /// <param name="script"></param>
     /// <param name="filePath"></param>
     /// <param name="context"></param>
-    public TSProgram(string filePath, string script, Context? context)
+    public TSProgram(string filePath, string? script, Context? context)
     {
         Stopwatch stopwatch = new();
         stopwatch.Start();
@@ -75,24 +127,41 @@ public class TSProgram : IProgram
         TextContexts = [];
         HashSet<string> filePathSet = [];
         StepContext = new(Owner);
+        if (context != null)
+        {
+            StepContext.MountVariableSpace(context.getContext);
+        }
+
         Steps = new(Owner);
+        Dictionary<string, string>? sources = null;
+        if (script != null)
+        {
+            sources = [];
+            sources[filePath] = script;
+        }
+
         void loadFile(string filePath)
         {
             if (filePathSet.Contains(filePath.ToLower())) return;
-            if (File.Exists(filePath) == false)
+            filePathSet.Add(filePath.ToLower());
+            if (FileSystem.Exists(filePath) == false && sources?.ContainsKey(filePath) == false)
             {
                 Logger.Info($"File not found: {filePath}");
                 return;
             }
+
             if (filePath.EndsWith(".dll"))
             {
                 Assembly.LoadFrom(filePath);
                 return;
             }
-            GetContext(filePath, Owner, out var document, out var textContext);
+
+            GetContext(filePath, Owner, sources, out var document, out var textContext);
+
             stopwatch.Stop();
             Logger.Info($"Text Analyse: {stopwatch.ElapsedMilliseconds}ms, {filePath}");
-            var imports = textContext.Root.Data.Where(item => item is Import).Select(item => (item as Import)!).ToArray();
+            var imports = textContext.Root.Data.Where(item => item is Import).Select(item => (item as Import)!)
+                .ToArray();
             foreach (var import in imports)
             {
                 var from = import.From;
@@ -105,10 +174,12 @@ public class TSProgram : IProgram
                     fromFilePaths.Add(from + "/index.ts");
                     fromFilePaths.Add(from + ".ts");
                 }
+
                 bool isFound = false;
                 foreach (var fromFilePath in fromFilePaths)
                 {
-                    var fullFilePath = Path.GetFullPath(fromFilePath, Path.GetDirectoryName(filePath) ?? throw new Exception("filePath is null"));
+                    var fullFilePath = Path.GetFullPath(fromFilePath,
+                        Path.GetDirectoryName(filePath) ?? throw new Exception("filePath is null"));
                     if (File.Exists(fullFilePath))
                     {
                         loadFile(fullFilePath);
@@ -116,14 +187,17 @@ public class TSProgram : IProgram
                         break;
                     }
                 }
+
                 if (isFound == false)
                 {
                     Logger.Info($"File not found: {from}");
                 }
             }
+
             TextDocuments.Add(document);
             TextContexts.Add(textContext);
         }
+
         loadFile(filePath);
         foreach (var textContext in TextContexts)
         {
@@ -139,7 +213,7 @@ public class TSProgram : IProgram
     /// </summary>
     /// <param name="filePath"></param>
     /// <param name="script"></param>
-    public TSProgram(string filePath, string script) : this(filePath, script, null)
+    public TSProgram(string filePath, string? script) : this(filePath, script, null)
     {
     }
 
@@ -206,7 +280,8 @@ public class TSProgram : IProgram
         while (last != null)
         {
             var inner = last.InnerException;
-            if (last is RuntimeException<char> lastRuntimeException && inner is RuntimeException<char> innerRuntimeException)
+            if (last is RuntimeException<char> lastRuntimeException &&
+                inner is RuntimeException<char> innerRuntimeException)
             {
                 if (lastRuntimeException.SourceRange == innerRuntimeException.SourceRange)
                 {
@@ -214,6 +289,7 @@ public class TSProgram : IProgram
                     continue;
                 }
             }
+
             if (last is RuntimeException<char> lastRuntimeException2)
             {
                 if (last.InnerException == null)
@@ -229,8 +305,10 @@ public class TSProgram : IProgram
             {
                 messages.Add(last.Message);
             }
+
             last = last.InnerException;
         }
+
         messages.Reverse();
         return messages.Join("\r\n");
     }

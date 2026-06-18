@@ -4,6 +4,7 @@ using TidyHPC.Extensions;
 using TidyHPC.LiteJson;
 
 namespace Cangjie.TypeSharp.BasicType;
+
 public struct JsonWrapper
 {
     public JsonWrapper(object? value)
@@ -33,20 +34,14 @@ public struct JsonWrapper
     public List<object> map(Func<Json, Json> onItem)
     {
         List<object> result = [];
-        Target.ForeachArray(item =>
-        {
-            result.Add(onItem(item));
-        });
+        Target.ForeachArray(item => { result.Add(onItem(item)); });
         return result;
     }
 
     public List<object> map(Func<Json, Json, Json> onItem)
     {
         List<object> result = [];
-        Target.ForeachArray((index, item) =>
-        {
-            result.Add(onItem(item, index));
-        });
+        Target.ForeachArray((index, item) => { result.Add(onItem(item, index)); });
         return result;
     }
 
@@ -74,6 +69,7 @@ public struct JsonWrapper
                 return item;
             }
         }
+
         return Json.Undefined;
     }
 
@@ -89,6 +85,7 @@ public struct JsonWrapper
                 return index;
             }
         }
+
         return -1;
     }
 
@@ -139,6 +136,7 @@ public struct JsonWrapper
         {
             return Target.IndexOf(value);
         }
+
         return -1;
     }
 
@@ -152,6 +150,7 @@ public struct JsonWrapper
         {
             return Target.IndexOf(value, start.ToInt32);
         }
+
         return -1;
     }
 
@@ -165,6 +164,7 @@ public struct JsonWrapper
         {
             return Target.LastIndexOf(value);
         }
+
         return -1;
     }
 
@@ -178,6 +178,7 @@ public struct JsonWrapper
         {
             return Target.LastIndexOf(value, start.ToInt32);
         }
+
         return -1;
     }
 
@@ -200,6 +201,7 @@ public struct JsonWrapper
                     {
                         result.Add(ch.ToString());
                     }
+
                     return result;
                 }
                 else
@@ -247,6 +249,7 @@ public struct JsonWrapper
         {
             temp.Append(item);
         }
+
         return temp.ToString();
     }
 
@@ -398,6 +401,7 @@ public struct JsonWrapper
         {
             start = Target.Count + start;
         }
+
         if (Target.IsArray)
         {
             return Target.Splice(start, deleteCount, items);
@@ -416,10 +420,12 @@ public struct JsonWrapper
         {
             start = Target.Count + start;
         }
+
         if (end < 0)
         {
             end = Target.Count + end;
         }
+
         if (Target.IsArray || Target.IsString)
         {
             return Target.Slice(start, end);
@@ -444,6 +450,7 @@ public struct JsonWrapper
                 return true;
             }
         }
+
         return false;
     }
 
@@ -459,6 +466,7 @@ public struct JsonWrapper
         {
             result = onItem(result, item);
         }
+
         return result;
     }
 
@@ -470,6 +478,7 @@ public struct JsonWrapper
         {
             result = onItem(result, item);
         }
+
         return result;
     }
 
@@ -480,6 +489,7 @@ public struct JsonWrapper
         {
             result = onItem(result, item);
         }
+
         return result;
     }
 
@@ -491,6 +501,7 @@ public struct JsonWrapper
         {
             result = onItem(result, item);
         }
+
         return result;
     }
 
@@ -515,6 +526,7 @@ public struct JsonWrapper
         {
             self[i] = item;
         }
+
         return self;
     }
 
@@ -526,6 +538,7 @@ public struct JsonWrapper
         {
             self[i] = item;
         }
+
         return self;
     }
 
@@ -535,6 +548,7 @@ public struct JsonWrapper
         {
             Target.Insert(0, items[i]);
         }
+
         return Target;
     }
 
@@ -548,6 +562,7 @@ public struct JsonWrapper
                 return false;
             }
         }
+
         return true;
     }
 
@@ -639,6 +654,7 @@ public struct JsonWrapper
     public Json flatMap(Func<Json, Json> onItem)
     {
         Json result = Json.NewArray();
+
         void _flat(Json target, Json result)
         {
             foreach (var item in target.GetArrayEnumerable())
@@ -654,6 +670,7 @@ public struct JsonWrapper
                 }
             }
         }
+
         _flat(Target, result);
         return result;
     }
@@ -661,6 +678,7 @@ public struct JsonWrapper
     public Json flatMap(Func<Json, Json> onItem, Json depth)
     {
         Json result = Json.NewArray();
+
         void _flat(Json target, Json depth, Json result)
         {
             if (depth.ToInt32 == 0)
@@ -683,6 +701,7 @@ public struct JsonWrapper
                 }
             }
         }
+
         _flat(Target, depth, result);
         return result;
     }
@@ -693,6 +712,7 @@ public struct JsonWrapper
         {
             throw new InvalidOperationException("JsonWrapper: match only support string type");
         }
+
         Regex regex;
         if (value.IsString)
         {
@@ -706,6 +726,7 @@ public struct JsonWrapper
         {
             throw new InvalidOperationException("JsonWrapper: match only support string or regex type");
         }
+
         var match = regex.Match(Target.AsString);
         var matchResult = Json.Null;
         if (match.Success)
@@ -721,19 +742,23 @@ public struct JsonWrapper
                     index++;
                 }
             }
+
             var groups = Json.NewObject();
             foreach (Group group in match.Groups)
             {
-                if (group.Success && !string.IsNullOrEmpty(group.Name) && group.Name != "0" && !int.TryParse(group.Name, out _))
+                if (group.Success && !string.IsNullOrEmpty(group.Name) && group.Name != "0" &&
+                    !int.TryParse(group.Name, out _))
                 {
                     groups.Set(group.Name, group.Value);
                 }
             }
+
             if (groups.Count > 0)
             {
                 matchResult.Set("groups", groups);
             }
         }
+
         return matchResult;
     }
 
@@ -743,6 +768,7 @@ public struct JsonWrapper
         {
             throw new InvalidOperationException("JsonWrapper: test only support regex type");
         }
+
         Regex regex = Target.As<Regex>();
         if (value.IsString)
         {
@@ -764,6 +790,7 @@ public struct JsonWrapper
         {
             throw new InvalidOperationException("JsonWrapper: exec only support regex type");
         }
+
         Regex regex = Target.As<Regex>();
         if (value.IsString)
         {
@@ -781,14 +808,18 @@ public struct JsonWrapper
                         index++;
                     }
                 }
+
                 var groups = result.GetOrCreateObject("groups");
                 foreach (Group group in match.Groups)
                 {
-                    if (group.Success && !string.IsNullOrEmpty(group.Name) && group.Name != "0" && !int.TryParse(group.Name, out _))
+                    if (group.Success && !string.IsNullOrEmpty(group.Name) && group.Name != "0" &&
+                        !int.TryParse(group.Name, out _))
                     {
                         groups.Set(group.Name, group.Value);
                     }
                 }
+
+                result["length"] = result.Count;
                 return result;
             }
             else
@@ -808,6 +839,7 @@ public struct JsonWrapper
         {
             throw new InvalidOperationException("JsonWrapper: localeCompare only support string type");
         }
+
         return Target.AsString.CompareTo(other.AsString);
     }
 

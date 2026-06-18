@@ -2,24 +2,31 @@
 
 namespace Cangjie.TypeSharp.System;
 #pragma warning disable CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
-public class program:IDisposable
+public class program : IDisposable
 #pragma warning restore CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 {
     public program(string filePath)
     {
-        _program = new(filePath, File.ReadAllText(filePath, Util.UTF8));
+        _program = new(filePath);
         _filePath = filePath;
         _context = null;
     }
 
-    public program(string filePath, string code)
+    public program(string filePath, Context? context)
+    {
+        _program = new(filePath, null, context);
+        _filePath = filePath;
+        _context = context;
+    }
+
+    public program(string filePath, string? code)
     {
         _program = new(filePath, code);
         _filePath = filePath;
         _context = null;
     }
 
-    public program(string filePath,string code,Context context)
+    public program(string filePath, string? code, Context? context)
     {
         _program = new(filePath, code, context);
         _filePath = filePath;
@@ -46,13 +53,13 @@ public class program:IDisposable
             context.args = args;
             await _program.RunAsync(context);
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             throw new Exception(TSProgram.GetExceptionMessage(e));
         }
     }
 
-    public async Task runAsync(string[] args,Json context)
+    public async Task runAsync(string[] args, Json context)
     {
         try
         {
@@ -68,14 +75,30 @@ public class program:IDisposable
         }
     }
 
-    public static program load(string filePath) => new(filePath);
+    public static program loadFile(string filePath) => new(filePath);
 
     public static program loadFile(string filePath, Json context)
     {
-        Context _context = new ();
+        Context _context = new();
         _context.setContext(context);
-        return new(filePath, File.ReadAllText(filePath, Util.UTF8), _context);
+        return new(filePath, null, _context);
     }
 
-    public static program load(string filePath, string code) => new(filePath, code);
+    public static program loadCode(string filePath, string code) => new(filePath, code);
+
+    public static program loadCode(string filePath, string code, Json context)
+    {
+        Context _context = new();
+        _context.setContext(context);
+        return new(filePath, code, _context);
+    }
+
+    public static program loadCode(string code, Json context)
+    {
+        Context _context = new();
+        _context.setContext(context);
+        return new(Util.ComputeMD5Hash(code), code, _context);
+    }
+
+    public static program loadCode(string code) => new(Util.ComputeMD5Hash(code), code);
 }
