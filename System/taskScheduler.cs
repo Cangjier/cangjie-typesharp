@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
+using System.Reflection;
 using TidyHPC.LiteJson;
 using TidyHPC.Locks;
+
 namespace Cangjie.TypeSharp.System;
 
 /// <summary>
@@ -20,6 +22,7 @@ public class taskScheduler
         {
             throw new InvalidOperationException("onTask must return a Task");
         }
+
         var id = Guid.NewGuid();
         _taskMap.TryAdd(id, task);
         return id;
@@ -71,13 +74,15 @@ public class taskScheduler
         {
             throw new InvalidOperationException($"Task with id {id} not found");
         }
+
         if (task.IsCompleted)
         {
             return new(task.GetType().GetProperty("Result")?.GetValue(task));
         }
         else if (task.IsFaulted)
         {
-            throw new Exception(task.Exception?.InnerExceptions.FirstOrDefault()?.Message, task.Exception?.InnerExceptions.FirstOrDefault()?.InnerException);
+            var exception = ExceptionUtil.GetInnerException(task.Exception);
+            throw new Exception(exception?.Message, exception?.InnerException);
         }
         else
         {
@@ -91,14 +96,22 @@ public class taskScheduler
         {
             throw new InvalidOperationException($"Task with id {id} not found");
         }
+
         try
         {
             await task;
         }
         catch (AggregateException aggregateException)
         {
-            throw new Exception(aggregateException.InnerExceptions.FirstOrDefault()?.Message, aggregateException.InnerExceptions.FirstOrDefault()?.InnerException);
+            var exception = ExceptionUtil.GetInnerException(aggregateException);
+            throw new Exception(exception?.Message, exception?.InnerException);
         }
+        catch (TargetInvocationException targetInvocationException)
+        {
+            var exception = ExceptionUtil.GetInnerException(targetInvocationException);
+            throw new Exception(exception?.Message, exception?.InnerException);
+        }
+
         return getResultOrThrowException(id);
     }
 }

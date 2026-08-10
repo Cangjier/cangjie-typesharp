@@ -4,6 +4,7 @@ using TidyHPC.Routers.Urls.Responses;
 using Cangjie.TypeSharp.Server;
 using TidyHPC.ASP.LiteKestrelServers;
 using System.Security.Cryptography.X509Certificates;
+using TidyHPC.Loggers;
 
 namespace Cangjie.TypeSharp.System;
 
@@ -16,10 +17,12 @@ public class Server
     {
         Application = new Application();
     }
+
     public Server(Application application)
     {
         Application = application;
     }
+
     public Application Application { get; }
 
     public ApplicationConfig ApplicationConfig { get; } = new();
@@ -64,6 +67,7 @@ public class Server
                 {
                     continue;
                 }
+
                 ApplicationConfig.ServerPorts.Add(port, new LiteKestrelServer.PortConfig { Port = port });
             }
         }
@@ -74,6 +78,7 @@ public class Server
             {
                 return;
             }
+
             ApplicationConfig.ServerPorts.Add(port, new LiteKestrelServer.PortConfig { Port = port });
         }
     }
@@ -85,13 +90,27 @@ public class Server
             portConfig = new LiteKestrelServer.PortConfig { Port = port };
             ApplicationConfig.ServerPorts.Add(port, portConfig);
         }
+
         portConfig.X509Certificate2 = X509Certificate2.CreateFromPemFile(certificatePath, certificateKeyPath);
+    }
+
+    public void useSSL(int port, string certificatePath, string certificateKeyPath, string[] additionalCertificatesPaths)
+    {
+        if (ApplicationConfig.ServerPorts.TryGetValue(port, out var portConfig) == false)
+        {
+            portConfig = new LiteKestrelServer.PortConfig { Port = port };
+            ApplicationConfig.ServerPorts.Add(port, portConfig);
+        }
+        portConfig.X509Certificate2 = X509Certificate2.CreateFromPemFile(certificatePath, certificateKeyPath);
+        portConfig.X509Certificate2Collection = new();
+        foreach (var additionalCertificatePath in additionalCertificatesPaths)
+        {
+            portConfig.X509Certificate2Collection.ImportFromPemFile(additionalCertificatePath);
+        }
     }
 
     public void useHttpsRedirect()
     {
         ApplicationConfig.EnableHttpsRedirect = true;
     }
-
-
 }

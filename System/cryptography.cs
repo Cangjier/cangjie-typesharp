@@ -17,7 +17,7 @@ public class cryptography
     {
         // 将密钥和消息转换为字节数组
         byte[] keyBytes;
-        if(key.Is<byte[]>())
+        if (key.Is<byte[]>())
         {
             keyBytes = key.As<byte[]>();
         }
@@ -29,6 +29,7 @@ public class cryptography
         {
             throw new Exception("key must be byte[] or string");
         }
+
         byte[] messageBytes;
         if (message.Is<byte[]>())
         {
@@ -54,6 +55,7 @@ public class cryptography
             {
                 hex.AppendFormat("{0:x2}", b);
             }
+
             return hex.ToString();
         }
     }
@@ -80,6 +82,7 @@ public class cryptography
         {
             throw new Exception("key must be byte[] or string");
         }
+
         byte[] messageBytes;
         if (message.Is<byte[]>())
         {
@@ -128,6 +131,7 @@ public class cryptography
             {
                 hex.AppendFormat("{0:x2}", b);
             }
+
             return hex.ToString();
         }
     }
@@ -148,7 +152,49 @@ public class cryptography
         {
             throw new Exception("message must be byte[] or string");
         }
+
         return new Json(sha256.ComputeHash(messageBytes));
+    }
+
+    public static void writeEncryptedFile(string filePath, Guid keyGuid, string content)
+    {
+        byte[] key = keyGuid.ToByteArray();
+        using var aes = Aes.Create();
+        aes.Key = key;
+        aes.Mode = CipherMode.CBC;
+        aes.Padding = PaddingMode.PKCS7;
+        aes.GenerateIV(); // 随机生成 IV
+
+        using var fs = new FileStream(filePath, FileMode.Create);
+        // 先写入 IV（16 字节）
+        fs.Write(aes.IV, 0, aes.IV.Length);
+
+        using var encryptor = aes.CreateEncryptor();
+        using var cryptoStream = new CryptoStream(fs, encryptor, CryptoStreamMode.Write);
+        using var writer = new StreamWriter(cryptoStream, Util.UTF8);
+        writer.Write(content); // 流式写入，不会将整个明文加载到内存
+    }
+
+    public static string readEncryptedFile(string filePath, Guid keyGuid)
+    {
+        byte[] key = keyGuid.ToByteArray();
+
+        using var fs = new FileStream(filePath, FileMode.Open);
+        // 读取 IV（前 16 字节）
+        byte[] iv = new byte[16];
+        if (fs.Read(iv, 0, 16) != 16)
+            throw new InvalidDataException("File is too short to contain an IV.");
+
+        using var aes = Aes.Create();
+        aes.Key = key;
+        aes.IV = iv;
+        aes.Mode = CipherMode.CBC;
+        aes.Padding = PaddingMode.PKCS7;
+
+        using var decryptor = aes.CreateDecryptor();
+        using var cryptoStream = new CryptoStream(fs, decryptor, CryptoStreamMode.Read);
+        using var reader = new StreamReader(cryptoStream, Util.UTF8);
+        return reader.ReadToEnd(); // 流式解密，但最终会将整个明文返回为字符串
     }
 
 }

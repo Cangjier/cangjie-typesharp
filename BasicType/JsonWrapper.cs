@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
+using Cangjie.Typesharp.System;
 using TidyHPC.Extensions;
 using TidyHPC.LiteJson;
 
@@ -238,6 +239,12 @@ public struct JsonWrapper
     public string replace(Regex regex, string newValue)
     {
         if (Target.IsString) return regex.Replace(Target.AsString, newValue);
+        else throw new InvalidOperationException("JsonWrapper: replace only support string type");
+    }
+
+    public string replace(RegExp regex, string newValue)
+    {
+        if (Target.IsString) return regex.Regex.Replace(Target.AsString, newValue);
         else throw new InvalidOperationException("JsonWrapper: replace only support string type");
     }
 
@@ -722,6 +729,10 @@ public struct JsonWrapper
         {
             regex = value.As<Regex>();
         }
+        else if (value.Is<RegExp>())
+        {
+            regex = value.As<RegExp>().Regex;
+        }
         else
         {
             throw new InvalidOperationException("JsonWrapper: match only support string or regex type");
@@ -732,15 +743,13 @@ public struct JsonWrapper
         if (match.Success)
         {
             matchResult = Json.NewObject();
-            matchResult.Set("0", match.Value);
-            int index = 1;
+            matchResult.Set("input", Target.AsString);
+            int index = 0;
             foreach (Group group in match.Groups)
             {
-                if (group.Success)
-                {
-                    matchResult.Set(index.ToString(), group.Value);
-                    index++;
-                }
+                if (!group.Success) continue;
+                matchResult.Set(index.ToString(), group.Value);
+                index++;
             }
 
             var groups = Json.NewObject();
@@ -757,7 +766,8 @@ public struct JsonWrapper
             {
                 matchResult.Set("groups", groups);
             }
-            matchResult["length"] = matchResult.Count;
+
+            matchResult["length"] = index;
         }
 
         return matchResult;
@@ -765,12 +775,20 @@ public struct JsonWrapper
 
     public bool test(Json value)
     {
-        if (Target.Is<Regex>() == false)
+        Regex? regex = null;
+        if (Target.Is<Regex>())
         {
-            throw new InvalidOperationException("JsonWrapper: test only support regex type");
+            regex = Target.As<Regex>();
+        }
+        else if (Target.Is<RegExp>())
+        {
+            regex = Target.As<RegExp>().Regex;
+        }
+        else
+        {
+            throw new InvalidOperationException("JsonWrapper: test only support regex or regexp type");
         }
 
-        Regex regex = Target.As<Regex>();
         if (value.IsString)
         {
             return regex.IsMatch(value.AsString);
@@ -787,27 +805,33 @@ public struct JsonWrapper
 
     public Json exec(Json value)
     {
-        if (Target.Is<Regex>() == false)
+        Regex? regex = null;
+        if (Target.Is<Regex>())
         {
-            throw new InvalidOperationException("JsonWrapper: exec only support regex type");
+            regex = Target.As<Regex>();
+        }
+        else if (Target.Is<RegExp>())
+        {
+            regex = Target.As<RegExp>().Regex;
+        }
+        else
+        {
+            throw new InvalidOperationException("JsonWrapper: exec only support regex or regexp type");
         }
 
-        Regex regex = Target.As<Regex>();
         if (value.IsString)
         {
             var match = regex.Match(value.AsString);
             if (match.Success)
             {
                 var result = Json.NewObject();
-                result.Set("0", match.Value);
-                int index = 1;
+                result.Set("input", value.AsString);
+                int index = 0;
                 foreach (Group group in match.Groups)
                 {
-                    if (group.Success)
-                    {
-                        result.Set(index.ToString(), group.Value);
-                        index++;
-                    }
+                    if (!group.Success) continue;
+                    result.Set(index.ToString(), group.Value);
+                    index++;
                 }
 
                 var groups = result.GetOrCreateObject("groups");
@@ -820,7 +844,7 @@ public struct JsonWrapper
                     }
                 }
 
-                result["length"] = result.Count;
+                result["length"] = index;
                 return result;
             }
             else

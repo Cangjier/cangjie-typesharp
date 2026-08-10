@@ -49,4 +49,9 @@ public static class stringUtils
     {
         return value.AsString.Replace("\r", "").Split('\n');
     }
+    
+    public static bool isAllCharacters(string content, string characters)
+    {
+        return content.All(characters.Contains);
+    }
 }

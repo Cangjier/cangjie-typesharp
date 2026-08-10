@@ -1,26 +1,30 @@
 ﻿using Cangjie.TypeSharp.System;
 using System.Net;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.RegularExpressions;
 using TidyHPC.Extensions;
 using TidyHPC.LiteJson;
 
 namespace Cangjie.TypeSharp;
+
 public class Util
 {
     public static Encoding UTF8 { get; } = new UTF8Encoding(false);
 
-    public static Json EvalString(string script,Context context)
+    public static Json EvalString(string script, Context context)
     {
         return TSScriptEngine.Run(script, context);
     }
 
-    public static string TryEvalString(string script,Context context)
+    public static string TryEvalString(string script, Context context)
     {
-        if(script.StartsWith("$"))
+        if (script.StartsWith("$"))
         {
             return EvalString(script[1..], context).ToString();
         }
+
         return script;
     }
 
@@ -38,6 +42,7 @@ public class Util
             {
                 builder.Append(bytes[i].ToString("x2"));
             }
+
             return builder.ToString();
         }
     }
@@ -56,6 +61,7 @@ public class Util
             {
                 builder.Append(bytes[i].ToString("x2"));
             }
+
             return builder.ToString();
         }
     }
@@ -185,10 +191,11 @@ public class Util
 
     public static string GetSystemProxy()
     {
-        if(WebRequest.DefaultWebProxy?.GetProxy(new Uri("http://www.example.com")) is Uri webProxy)
+        if (WebRequest.DefaultWebProxy?.GetProxy(new Uri("http://www.example.com")) is Uri webProxy)
         {
             return webProxy.ToString();
         }
+
         return "";
     }
 
@@ -204,6 +211,7 @@ public class Util
             var segments = path.Split('/');
             return $"https://raw.githubusercontent.com/{segments.Skip(1).Where(item => item != "blob").Join("/")}";
         }
+
         return url;
     }
 
@@ -215,4 +223,5 @@ public class Util
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync();
     }
+
 }

@@ -3,13 +3,28 @@ using TidyHPC.LiteJson;
 
 namespace Cangjie.TypeSharp.System;
 
-public class Set:IEnumerable<Json>
+public class Set : IEnumerable<Json>
 {
     private readonly HashSet<Json> _hashSet;
 
     // 实现 JS 风格的构造函数重载
     public Set() => _hashSet = new HashSet<Json>();
-    public Set(params Json[] items) => _hashSet = new HashSet<Json>(items);
+
+    public Set(Json items)
+    {
+        _hashSet = new HashSet<Json>();
+        if (items.IsArray)
+        {
+            foreach (var item in items.GetArrayEnumerable())
+            {
+                _hashSet.Add(item);
+            }
+        }
+        else
+        {
+            throw new Exception("items must be an array");
+        }
+    }
 
     // 对应 JS Set.add()（返回实例本身以实现链式调用）
     public Set add(Json item)
@@ -19,7 +34,10 @@ public class Set:IEnumerable<Json>
     }
 
     // 对应 JS Set.has()
-    public bool has(Json item) => _hashSet.Contains(item);
+    public bool has(Json item)
+    {
+        return _hashSet.Contains(item);
+    }
 
     // 对应 JS Set.delete()
     public bool delete(Json item) => _hashSet.Remove(item);

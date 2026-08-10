@@ -170,6 +170,10 @@ public class Axios : IDisposable
             {
                 request.Content = new StreamContent(data.As<Stream>());
             }
+            else if (data.Is<FormData>())
+            {
+                request.Content = data.As<FormData>()._multipartFormDataContent;
+            }
             else
             {
                 request.Content = new StringContent(data.ToString(), Util.UTF8, "application/json");

@@ -36,15 +36,17 @@ public class database
 
     public async Task register(databaseInterface objectInterface)
     {
-        if(await Target.ContainsInterface(objectInterface.name))
+        if (await Target.ContainsInterface(objectInterface.name))
         {
             return;
         }
+
         ObjectInterface instance = new ObjectInterface();
         if (objectInterface.name == string.Empty)
         {
             throw new Exception("接口名称不能为空");
         }
+
         instance.FullName = objectInterface.name;
         foreach (var field in objectInterface.fields)
         {
@@ -52,8 +54,9 @@ public class database
             {
                 throw new Exception("字段名称不能为空");
             }
+
             FieldMapType mapType = FieldMapType.None;
-            if(field.isMaster)
+            if (field.isMaster)
             {
                 mapType = FieldMapType.Master;
             }
@@ -69,13 +72,14 @@ public class database
             {
                 mapType = FieldMapType.IndexSmallHashSet;
             }
+
             instance.Fields.Add(new Field
             {
                 Name = field.name,
                 Type = field.type.ToLower() switch
                 {
                     "int" => FieldType.Int32,
-                    "int32"=> FieldType.Int32,
+                    "int32" => FieldType.Int32,
                     "int64" => FieldType.Int64,
                     "float" => FieldType.Float,
                     "double" => FieldType.Double,
@@ -92,6 +96,7 @@ public class database
                 MapType = mapType
             });
         }
+
         await Target.RegisterInterface(instance);
     }
 
@@ -107,10 +112,11 @@ public class database
 
     public async Task<Json> findByIndex(string interfaceName, string fieldName, object value)
     {
-        if(value is Json jsonValue)
+        if (value is Json jsonValue)
         {
             value = jsonValue.Node ?? throw new NullReferenceException();
         }
+
         return await Target.FindByIndex(interfaceName, fieldName, value);
     }
 
@@ -120,12 +126,14 @@ public class database
         {
             value = jsonValue.Node ?? throw new NullReferenceException();
         }
+
         var addresses = await Target.GetRecordAddressesByIndexArray(interfaceName, fieldName, value);
         Json result = Json.NewArray();
         foreach (var address in addresses)
         {
             result.Add(await Target.FindByAddress(address));
         }
+
         return result;
     }
 
@@ -135,12 +143,14 @@ public class database
         {
             value = jsonValue.Node ?? throw new NullReferenceException();
         }
+
         var addresses = await Target.GetRecordAddressesByIndexHashSet(interfaceName, fieldName, value);
         Json result = Json.NewArray();
         foreach (var address in addresses)
         {
             result.Add(await Target.FindByAddress(address));
         }
+
         return result;
     }
 
@@ -155,6 +165,7 @@ public class database
         {
             value = jsonValue.Node ?? throw new NullReferenceException();
         }
+
         return await Target.ContainsByIndex(interfaceName, fieldName, value);
     }
 
@@ -166,6 +177,13 @@ public class database
     public async Task deleteByMaster(string interfaceName, Guid id)
     {
         await Target.DeleteByMaster(interfaceName, id);
+    }
+
+    public async Task<Json> list(string interfaceName)
+    {
+        Json result = Json.NewArray();
+        await Target.All(interfaceName, result.Add);
+        return result;
     }
 }
 
@@ -209,7 +227,7 @@ public class databaseField
 
     public bool isIndexSet
     {
-        get=> Target.Read("isIndexSet", false); 
+        get => Target.Read("isIndexSet", false);
         set => Target.Set("isIndexSet", value);
     }
 
@@ -226,7 +244,7 @@ public class databaseField
     }
 }
 
-public class databaseFields: IEnumerable<databaseField>
+public class databaseFields : IEnumerable<databaseField>
 {
     public static implicit operator databaseFields(Json target)
     {

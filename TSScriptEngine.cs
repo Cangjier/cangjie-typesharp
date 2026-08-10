@@ -330,6 +330,7 @@ public class TSScriptEngine
         async Task loadFile(string filePath)
         {
             if(filePathSet.Contains(filePath.ToLower())) return;
+            filePathSet.Add(filePath.ToLower());
             if (fileSystem.Exists(filePath) == false)
             {
                 Logger.Info($"File not found: {filePath}");
