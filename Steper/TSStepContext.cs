@@ -50,6 +50,34 @@ public class TSStepContext : StepContext<char>
             }
             else return typeof(Json);
         };
+        TypeInference.IncreaseType = (left, right) =>
+        {
+            if(left.Type == typeof(int) || right.Type == typeof(int))
+            {
+                var otherType = right.Type == typeof(int) ? left.Type : right.Type;
+                if(otherType == typeof(float))
+                {
+                    return typeof(float);
+                }
+                else if (otherType == typeof(double))
+                {
+                    return typeof(double);
+                }
+                else if (otherType == typeof(long))
+                {
+                    return typeof(long);
+                }
+            }
+            else if(left.Type == typeof(float) || right.Type == typeof(float))
+            {
+                var otherType = right.Type == typeof(float) ? left.Type : right.Type;
+                if(otherType == typeof(double))
+                {
+                    return typeof(double);
+                }
+            }
+            return null;
+        };
     }
 
     public bool IsSupportDefaultField { get; set; } = false;
