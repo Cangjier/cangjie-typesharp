@@ -114,4 +114,25 @@ public class taskScheduler
 
         return getResultOrThrowException(id);
     }
+
+    public Guid[] list()
+    {
+        return _taskMap.Keys.ToArray();
+    }
+
+    public Json listInfos()
+    {
+        Json result = Json.NewArray();
+        foreach (var task in _taskMap)
+        {
+            result.AddObject().Set("id", task.Key)
+                .Set("isCompleted", task.Value.IsCompleted)
+                .Set("isSuccess", task.Value.IsCompletedSuccessfully)
+                .Set("isFaulted", task.Value.IsFaulted)
+                .Set("isCanceled", task.Value.IsCanceled)
+                .Set("exception", task.Value.Exception?.InnerException?.Message);
+        }
+
+        return result;
+    }
 }
