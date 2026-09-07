@@ -127,7 +127,7 @@ public class typescript
             {
                 var interfaceObject = Json.NewObject();
                 interfaceObject["name"] = @interface.InterfaceName;
-                interfaceObject["extends"] = @interface.ExtendsInterfaceName;
+                interfaceObject["extends"] = @interface.ExtendsInterfaceNames.Join(",");
                 interfaceObject["isExport"] = @interface.IsExport;
                 interfaceObject["raw"] = document.GetRaw(@interface.SourceRange.Start!.Value.Index, @interface.SourceRange.End!.Value.Index);
                 var properties = interfaceObject.GetOrCreateObject("properties");

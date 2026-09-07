@@ -26,6 +26,7 @@ public class TSStepEngine : StepParserEngine<char>
             .Add(IfStep.Parser.Instance, ForStep.Parser.Instance, ForeachStep.Parser.Instance, WhileStep.Parser.Instance, TryStep.Parser.Instance,InterfaceStep.Parser.Instance)
             .Add(StatementStep.Parser.Instance);
         CreateRank().Add(WrapStep.Parser.Instance,DebuggerStep.Parser.Instance);
+        CreateRank().Add(TypeAssignStep.Parser.Instance);
         CreateRank().Add(TypeStep.DotParser.Instance);
         CreateRank().Add(MemberStep.MemberStepParser.Instance, IndexStep.Parser.Instance, MemberMethod.Parser.Instance,NullConditionalOperatorStep.Parser.Instance, MemberMethod.PreviousIsInstanceParser.Instance);
         CreateRank().Add(UnaryOperatorStep.Parser.UnaryPlus, UnaryOperatorStep.Parser.UnaryNegation,UnaryOperatorStep.Parser.Increment, UnaryOperatorStep.Parser.Decrement, UnaryOperatorStep.Parser.LogicalNot);

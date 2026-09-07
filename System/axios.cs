@@ -98,7 +98,7 @@ public class Axios : IDisposable
             HttpResponseMessage? response;
             if (config?.useDefaultProxy == true)
             {
-                response = await HttpClient.SendAsync(request);
+                response = await HttpClient.SendAsync(request, config.cancellationToken);
                 await result.setResponse(response, config, context);
             }
             else
@@ -108,7 +108,7 @@ public class Axios : IDisposable
                     Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy)
                 });
                 client.Timeout = TimeSpan.FromDays(8);
-                response = await client.SendAsync(request);
+                response = await client.SendAsync(request, config?.cancellationToken ?? CancellationToken.None);
                 await result.setResponse(response, config, context);
             }
 
@@ -132,7 +132,7 @@ public class Axios : IDisposable
             HttpResponseMessage? response;
             if (config?.useDefaultProxy == true)
             {
-                response = await HttpClient.SendAsync(request);
+                response = await HttpClient.SendAsync(request, config.cancellationToken);
                 await result.setResponse(response, config, context);
             }
             else
@@ -142,7 +142,7 @@ public class Axios : IDisposable
                     Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
                 });
                 client.Timeout = TimeSpan.FromDays(8);
-                response = await client.SendAsync(request);
+                response = await client.SendAsync(request, config?.cancellationToken ?? CancellationToken.None);
                 await result.setResponse(response, config, context);
             }
 
@@ -182,7 +182,7 @@ public class Axios : IDisposable
             HttpResponseMessage? response;
             if (config?.useDefaultProxy == true)
             {
-                response = await HttpClient.SendAsync(request);
+                response = await HttpClient.SendAsync(request, config.cancellationToken);
                 await result.setResponse(response, config, context);
             }
             else
@@ -192,7 +192,7 @@ public class Axios : IDisposable
                     Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
                 });
                 client.Timeout = TimeSpan.FromDays(8);
-                response = await client.SendAsync(request);
+                response = await client.SendAsync(request, config?.cancellationToken ?? CancellationToken.None);
                 await result.setResponse(response, config, context);
             }
         }
@@ -228,7 +228,7 @@ public class Axios : IDisposable
             HttpResponseMessage? response;
             if (config?.useDefaultProxy == true)
             {
-                response = await HttpClient.SendAsync(request);
+                response = await HttpClient.SendAsync(request, config.cancellationToken);
                 await result.setResponse(response, config, context);
             }
             else
@@ -238,7 +238,7 @@ public class Axios : IDisposable
                     Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
                 });
                 client.Timeout = TimeSpan.FromDays(8);
-                response = await client.SendAsync(request);
+                response = await client.SendAsync(request, config?.cancellationToken ?? CancellationToken.None);
                 await result.setResponse(response, config, context);
             }
         }
@@ -274,7 +274,7 @@ public class Axios : IDisposable
             HttpResponseMessage? response;
             if (config?.useDefaultProxy == true)
             {
-                response = await HttpClient.SendAsync(request);
+                response = await HttpClient.SendAsync(request, config.cancellationToken);
                 await result.setResponse(response, config, context);
             }
             else
@@ -284,7 +284,7 @@ public class Axios : IDisposable
                     Proxy = string.IsNullOrEmpty(config?.proxy) ? null : new WebProxy(config?.proxy),
                 });
                 client.Timeout = TimeSpan.FromDays(8);
-                response = await client.SendAsync(request);
+                response = await client.SendAsync(request, config?.cancellationToken ?? CancellationToken.None);
                 await result.setResponse(response, config, context);
             }
         }
@@ -501,6 +501,10 @@ public class axiosConfig
                 result.@params.Add(item.Key, item.Value.AsString);
             }
         }
+        if (target.ContainsKey("cancellationToken"))
+        {
+            result.cancellationToken = target.Get("cancellationToken").As<CancellationToken>();
+        }
         return result;
     }
 
@@ -515,6 +519,8 @@ public class axiosConfig
     public string proxy { get; set; } = "";
 
     public bool useDefaultProxy = true;
+
+    public CancellationToken cancellationToken { get; set; } = CancellationToken.None;
 
     public void setRequest(HttpRequestMessage request)
     {

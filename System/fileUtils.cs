@@ -3,6 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using Cangjie.Typesharp.System;
+using TidyHPC.Extensions;
 using TidyHPC.LiteJson;
 
 namespace Cangjie.TypeSharp.System;
@@ -56,7 +58,18 @@ public class fileUtils
 
     public static DateTime lastWriteTime(string path)
     {
-        return File.GetLastWriteTime(path);
+        if (File.Exists(path))
+        {
+            return File.GetLastWriteTime(path);
+        }
+        else if (Directory.Exists(path))
+        {
+            return Directory.GetLastWriteTime(path);
+        }
+        else
+        {
+            throw new FileNotFoundException($"File or directory not found: {path}");
+        }
     }
 
     public static void writeLineWithShare(string path, string content)
@@ -76,6 +89,253 @@ public class fileUtils
         catch
         {
             return true;
+        }
+    }
+
+    public static int getFilesCount(string path, SearchOption searchOption = SearchOption.AllDirectories)
+    {
+        try
+        {
+            return Directory.EnumerateFiles(path, "*", searchOption).Count();
+        }
+        catch
+        {
+            return -1;
+        }
+    }
+
+    public static int getDirectoriesCount(string path, SearchOption searchOption = SearchOption.AllDirectories)
+    {
+        try
+        {
+            return Directory.EnumerateDirectories(path, "*", searchOption).Count();
+        }
+        catch
+        {
+            return -1;
+        }
+    }
+
+    public static string? getSingleFile(string path)
+    {
+        if (Directory.Exists(path) == false)
+        {
+            return null;
+        }
+
+        var directories = Directory.GetDirectories(path);
+        if (directories.Length > 1)
+        {
+            return null;
+        }
+
+        var files = Directory.GetFiles(path);
+        if (directories.Length == 0 && files.Length == 1)
+        {
+            return files[0];
+        }
+        else if (directories.Length == 1 && files.Length == 0)
+        {
+            return getSingleFile(directories[0]);
+        }
+
+        return null;
+    }
+
+    public static int getChildrenCount(string path, SearchOption searchOption = SearchOption.AllDirectories)
+    {
+        try
+        {
+            return Directory.EnumerateFileSystemEntries(path, "*", searchOption).Count();
+        }
+        catch
+        {
+            return -1;
+        }
+    }
+
+    public static string? getTopContent(string path, int maxLength)
+    {
+        try
+        {
+            using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var streamReader = new StreamReader(fileStream, Util.UTF8);
+            StringBuilder content = new();
+            while (!streamReader.EndOfStream)
+            {
+                var line = streamReader.ReadLine();
+                if (line == null)
+                {
+                    break;
+                }
+
+                content.AppendLine(line);
+                if (content.Length > maxLength)
+                {
+                    break;
+                }
+            }
+
+            return content.ToString().Substring(0, global::System.Math.Min(content.Length, maxLength));
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public static string? getRangeContent(string path, int startIndex, int endIndex)
+    {
+        try
+        {
+            using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var streamReader = new StreamReader(fileStream, Util.UTF8);
+            StringBuilder content = new();
+            int currentIndex = 0;
+            while (!streamReader.EndOfStream)
+            {
+                var line = streamReader.ReadLine();
+                if (line == null)
+                {
+                    break;
+                }
+
+                currentIndex += line.Length;
+                if (currentIndex < startIndex)
+                {
+                    continue;
+                }
+
+                content.AppendLine(line);
+                if (currentIndex > endIndex)
+                {
+                    return content.ToString();
+                }
+            }
+
+            return string.Empty;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public static string matchLines(string path, RegExp regex)
+    {
+        try
+        {
+            List<string> lines = new();
+            using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var streamReader = new StreamReader(fileStream, Util.UTF8);
+            while (!streamReader.EndOfStream)
+            {
+                var line = streamReader.ReadLine();
+                if (line == null)
+                {
+                    break;
+                }
+
+                if (regex.Regex.IsMatch(line))
+                {
+                    lines.Add(line);
+                }
+            }
+
+            return lines.Join("\n");
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    public static bool containsFileName(string path, string fileName,
+        StringComparison stringComparison = StringComparison.Ordinal)
+    {
+        var files = Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories);
+        try
+        {
+            foreach (var chunk in files.Chunk(100))
+            {
+                foreach (var file in chunk)
+                {
+                    if (string.Compare(Path.GetFileName(file), fileName, stringComparison) == 0)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static bool containsNumberOfFiles(string path, int numberOfFiles)
+    {
+        var files = Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories);
+        try
+        {
+            int count = 0;
+            foreach (var chunk in files.Chunk(100))
+            {
+                count += chunk.Length;
+                if (count >= numberOfFiles)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static string getFileSizeAlias(Json sizeOrPath)
+    {
+        try
+        {
+            long size;
+            if (sizeOrPath.IsString)
+            {
+                size = new FileInfo(sizeOrPath.AsString).Length;
+            }
+            else if (sizeOrPath.IsNumber)
+            {
+                size = sizeOrPath.ToInt64;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid size or path: {sizeOrPath}");
+            }
+
+            if (size < 1024)
+            {
+                return $"{size}B";
+            }
+            else if (size < 1024 * 1024)
+            {
+                return $"{size / 1024}KB{getFileSizeAlias(size % 1024)}";
+            }
+            else if (size < 1024 * 1024 * 1024)
+            {
+                return $"{size / 1024 / 1024}MB{getFileSizeAlias(size % (1024 * 1024))}";
+            }
+            else
+            {
+                return $"{size / 1024 / 1024 / 1024}GB{getFileSizeAlias(size % (1024 * 1024 * 1024))}";
+            }
+        }
+        catch
+        {
+            return "???B";
         }
     }
 
@@ -130,24 +390,31 @@ public class fileUtils
         [NotNullWhen(true)] out Match? match)
     {
         match = null;
-        using var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
-        using var streamReader = new StreamReader(fileStream, encoding);
-        while (!streamReader.EndOfStream)
+        try
         {
-            var line = streamReader.ReadLine();
-            if (line == null)
+            using var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var streamReader = new StreamReader(fileStream, encoding);
+            while (!streamReader.EndOfStream)
             {
-                break;
+                var line = streamReader.ReadLine();
+                if (line == null)
+                {
+                    break;
+                }
+
+                match = regex.Match(line);
+                if (match.Success)
+                {
+                    return true;
+                }
             }
 
-            match = regex.Match(line);
-            if (match.Success)
-            {
-                return true;
-            }
+            return false;
         }
-
-        return false;
+        catch
+        {
+            return false;
+        }
     }
 
     public static Json search(string directory, Json pattern, Json options = default)
@@ -157,6 +424,8 @@ public class fileUtils
         bool searchByContent = false;
         int pageIndex = 0;
         int pageSize = 20;
+        Regex? includeFileNameRegex = null;
+        Regex? excludeFileNameRegex = null;
         if (options.IsObject)
         {
             if (options.TryGet("encoding", out var encodingValue))
@@ -199,6 +468,30 @@ public class fileUtils
             {
                 pageSize = pageSizeValue.ToInt32;
             }
+
+            if (options.TryGet("includeFileNameRegex", out var includeFileNameRegexValue))
+            {
+                if (includeFileNameRegexValue.IsString)
+                {
+                    var includeFileNameRegexString = includeFileNameRegexValue.AsString;
+                    if (includeFileNameRegexString != "null" && includeFileNameRegexString != "")
+                    {
+                        includeFileNameRegex = new Regex(includeFileNameRegexString);
+                    }
+                }
+            }
+
+            if (options.TryGet("excludeFileNameRegex", out var excludeFileNameRegexValue))
+            {
+                if (excludeFileNameRegexValue.IsString)
+                {
+                    var excludeFileNameRegexString = excludeFileNameRegexValue.AsString;
+                    if (excludeFileNameRegexString != "null" && excludeFileNameRegexString != "")
+                    {
+                        excludeFileNameRegex = new Regex(excludeFileNameRegexString);
+                    }
+                }
+            }
         }
 
         var startIndex = pageIndex * pageSize;
@@ -233,9 +526,19 @@ public class fileUtils
                 var formatPath = file.Replace(directory, "").Replace("\\", "/");
                 if (formatPath.Contains("/.git/") ||
                     formatPath.Contains("/.svn/") ||
-                    formatPath.Contains("/.hg/")  ||
+                    formatPath.Contains("/.hg/") ||
                     formatPath.Contains("/.bzr/") ||
                     formatPath.Contains("/.cvs/"))
+                {
+                    continue;
+                }
+
+                if (includeFileNameRegex != null && includeFileNameRegex.IsMatch(formatPath) == false)
+                {
+                    continue;
+                }
+
+                if (excludeFileNameRegex != null && excludeFileNameRegex.IsMatch(formatPath))
                 {
                     continue;
                 }

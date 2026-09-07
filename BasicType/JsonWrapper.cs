@@ -90,6 +90,11 @@ public struct JsonWrapper
         return -1;
     }
 
+    public int findLastIndex(Func<Json, Json> onItem)
+    {
+        return Target.FindLastIndex(item => onItem(item).IsTrue);
+    }
+
     public void push(params Json[] values)
     {
         foreach (var value in values)

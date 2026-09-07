@@ -18,16 +18,38 @@ public class taskScheduler
 
     public Guid run(Delegate onTask)
     {
-        if (onTask.DynamicInvoke() is not Task task)
-        {
-            throw new InvalidOperationException("onTask must return a Task");
-        }
-
         var id = Guid.NewGuid();
-        _taskMap.TryAdd(id, task);
-        return id;
+        return run(id, onTask);
     }
 
+    public Guid run(Guid id, Delegate onTask)
+    {
+        if (onTask.Method.GetParameters().Length == 0)
+        {
+            if (onTask.DynamicInvoke() is not Task task)
+            {
+                throw new InvalidOperationException("onTask must return a Task");
+            }
+
+            _taskMap.TryAdd(id, task);
+            return id;
+        }
+        else if (onTask.Method.GetParameters().Length == 1)
+        {
+            if (onTask.DynamicInvoke(id) is not Task task)
+            {
+                throw new InvalidOperationException("onTask must return a Task");
+            }
+
+            _taskMap.TryAdd(id, task);
+            return id;
+        }
+        else
+        {
+            throw new InvalidOperationException("onTask must have 0 or 1 parameters");
+        }
+    }
+    
     public bool contains(Guid id)
     {
         return _taskMap.ContainsKey(id);

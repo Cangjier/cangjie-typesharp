@@ -7,9 +7,10 @@ using TidyHPC.LiteJson;
 using TidyHPC.Loggers;
 
 namespace Cangjie.TypeSharp.System;
+
 public static class staticContext
 {
-    public static object? @null = null;
+    public static Json @null = Json.Null;
 
     public static Json undefined = Json.Undefined;
 
@@ -21,6 +22,7 @@ public static class staticContext
         {
             process.StartInfo.WorkingDirectory = config.workingDirectory;
         }
+
         process.StartInfo.UseShellExecute = config.useShellExecute;
         process.StartInfo.CreateNoWindow = config.createNoWindow;
         process.StartInfo.RedirectStandardOutput = config.redirect;
@@ -33,6 +35,7 @@ public static class staticContext
         {
             config.arguments.Foreach(item => process.StartInfo.ArgumentList.Add(item.AsString));
         }
+
         StringBuilder output = new();
         StringBuilder error = new();
         if (config.redirect)
@@ -52,24 +55,25 @@ public static class staticContext
                 }
             };
         }
+
         process.Start();
         if (config.redirect)
         {
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
         }
+
         process.WaitForExit();
         var result = new processResult();
         if (config.redirect)
         {
-
             result.output = output.ToString();
             result.error = error.ToString();
         }
         else
         {
-
         }
+
         result.exitCode = process.ExitCode;
         return result;
     }
@@ -82,6 +86,7 @@ public static class staticContext
         {
             process.StartInfo.WorkingDirectory = config.workingDirectory;
         }
+
         process.StartInfo.UseShellExecute = config.useShellExecute;
         process.StartInfo.CreateNoWindow = config.createNoWindow;
         if (config.redirect)
@@ -89,6 +94,7 @@ public static class staticContext
             process.StartInfo.RedirectStandardOutput = config.redirect;
             process.StartInfo.RedirectStandardError = config.redirect;
         }
+
         if (config.environment.IsObject)
         {
             foreach (var pair in config.environment.GetObjectEnumerable())
@@ -103,7 +109,8 @@ public static class staticContext
                     var action = environmentValue.Read("action", "");
                     if (action == "add")
                     {
-                        process.StartInfo.Environment[pair.Key] = Environment.GetEnvironmentVariable(pair.Key) + ";" + environmentValue.Get("value", "").AsString;
+                        process.StartInfo.Environment[pair.Key] = Environment.GetEnvironmentVariable(pair.Key) + ";" +
+                                                                  environmentValue.Get("value", "").AsString;
                     }
                     else
                     {
@@ -117,10 +124,12 @@ public static class staticContext
                     {
                         envItems.Add(environmentValue.AsString);
                     }
+
                     process.StartInfo.Environment[pair.Key] = envItems.Join(";");
                 }
             }
         }
+
         if (config.arguments.IsString)
         {
             process.StartInfo.Arguments = config.arguments.AsString;
@@ -129,6 +138,7 @@ public static class staticContext
         {
             config.arguments.Foreach(item => process.StartInfo.ArgumentList.Add(item.AsString));
         }
+
         List<string> output = [];
         List<string> error = [];
         if (config.redirect)
@@ -148,12 +158,14 @@ public static class staticContext
                 }
             };
         }
+
         process.Start();
         if (config.redirect)
         {
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
         }
+
         await process.WaitForExitAsync();
         var result = new processResult();
         if (config.redirect)
@@ -163,8 +175,8 @@ public static class staticContext
         }
         else
         {
-
         }
+
         result.exitCode = process.ExitCode;
         return result;
     }
@@ -236,8 +248,8 @@ public static class staticContext
             {
                 FileName = Util.GetShell(), // 根据系统获取合适的 shell
                 Arguments = Util.GetShellArguments(commandLine), // shell 的参数，包括命令行
-                UseShellExecute = false,        // 启用 shell 执行，避免重定向
-                CreateNoWindow = true,        // 允许创建窗口
+                UseShellExecute = false, // 启用 shell 执行，避免重定向
+                CreateNoWindow = true, // 允许创建窗口
                 WorkingDirectory = workingDirectory // 设置工作目录
             };
 
@@ -286,6 +298,7 @@ public static class staticContext
         {
             return double.TryParse(value.AsString, out double result) == false;
         }
+
         return false;
     }
 
@@ -308,10 +321,12 @@ public static class staticContext
             {
                 return doubleValue;
             }
+
             return Int32.MinValue;
         }
         else if (value.IsInt32) return value.AsInt32;
         else if (value.IsDouble) return value.AsDouble;
+
         return Int32.MinValue;
     }
 
@@ -379,6 +394,7 @@ public static class staticContext
                     fi.Attributes &= ~FileAttributes.ReadOnly;
                 }
             }
+
             File.Copy(item, Path.Combine(destinationDirectory, relativePath), true);
         }
     }
@@ -392,8 +408,8 @@ public static class staticContext
         }
         catch
         {
-
         }
+
         try
         {
             var fi = new FileInfo(sourcePath);
@@ -401,6 +417,7 @@ public static class staticContext
             {
                 fi.Attributes &= ~FileAttributes.ReadOnly;
             }
+
             File.Delete(sourcePath);
         }
         catch
@@ -421,13 +438,13 @@ public static class staticContext
         {
             deleteFile(item);
         }
+
         try
         {
             Directory.Delete(sourceDirectory, true);
         }
         catch
         {
-
         }
     }
 
@@ -438,23 +455,25 @@ public static class staticContext
             Console.WriteLine("Source directory does not exist.");
             return;
         }
+
         foreach (string item in Directory.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories))
         {
             deleteFile(item);
         }
+
         foreach (string item in Directory.GetDirectories(sourceDirectory, "*", SearchOption.AllDirectories))
         {
             if (Directory.Exists(item) == false)
             {
                 continue;
             }
+
             deleteDirectory(item);
         }
     }
 
     public static string locate(string searchDirectory, string path)
     {
-
         var lastDirectory = searchDirectory;
         while (true)
         {
@@ -462,6 +481,7 @@ public static class staticContext
             {
                 return "";
             }
+
             var fullPath = Path.Combine(lastDirectory, path);
             if (File.Exists(fullPath))
             {
@@ -471,17 +491,19 @@ public static class staticContext
             {
                 return fullPath;
             }
+
             if (lastDirectory == Path.GetPathRoot(lastDirectory))
             {
                 return "";
             }
+
             lastDirectory = Path.GetDirectoryName(lastDirectory);
         }
     }
 
-    private static ConcurrentDictionary<Guid, SemaphoreSlim> locks { get; } = [];
+    private static ConcurrentDictionary<string, SemaphoreSlim> locks { get; } = [];
 
-    public static void @lock(Guid id)
+    public static void @lock(string id)
     {
         SemaphoreSlim? semaphore;
         lock (locks)
@@ -492,10 +514,11 @@ public static class staticContext
                 locks[id] = semaphore;
             }
         }
+
         semaphore.Wait();
     }
 
-    public static async Task lockAsync(Guid id)
+    public static async Task lockAsync(string id)
     {
         SemaphoreSlim? semaphore;
         lock (locks)
@@ -506,10 +529,11 @@ public static class staticContext
                 locks[id] = semaphore;
             }
         }
+
         await semaphore.WaitAsync();
     }
 
-    public static void unlock(Guid id)
+    public static void unlock(string id)
     {
         locks[id].Release();
     }
@@ -544,7 +568,60 @@ public static class staticContext
                 // 删除失败可能是什么原因？
             }
         }
+
         return success;
+    }
+
+    public static Json @lock(string id, Func<Json> func)
+    {
+        @lock(id);
+        try
+        {
+            return func();
+        }
+        finally
+        {
+            unlock(id);
+        }
+    }
+
+    public static void @lock(string id, Action action)
+    {
+        @lock(id);
+        try
+        {
+            action();
+        }
+        finally
+        {
+            unlock(id);
+        }
+    }
+
+    public static async Task @lockAsync(string id, Func<Task> func)
+    {
+        await lockAsync(id);
+        try
+        {
+            await func();
+        }
+        finally
+        {
+            unlock(id);
+        }
+    }
+
+    public static async Task<Json> @lockAsync(string id, Func<Task<Json>> func)
+    {
+        await lockAsync(id);
+        try
+        {
+            return await func();
+        }
+        finally
+        {
+            unlock(id);
+        }
     }
 
     public static string env(string environmentVariable)
@@ -570,6 +647,7 @@ public static class staticContext
         {
             return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         }
+
         return string.Empty;
     }
 
@@ -578,11 +656,13 @@ public static class staticContext
         using var md5 = MD5.Create();
         if (value.IsString)
         {
-            return BitConverter.ToString(md5.ComputeHash(Encoding.UTF8.GetBytes(value.AsString))).Replace("-", "").ToLower();
+            return BitConverter.ToString(md5.ComputeHash(Encoding.UTF8.GetBytes(value.AsString))).Replace("-", "")
+                .ToLower();
         }
         else
         {
-            return BitConverter.ToString(md5.ComputeHash(Encoding.UTF8.GetBytes(value.ToString()))).Replace("-", "").ToLower();
+            return BitConverter.ToString(md5.ComputeHash(Encoding.UTF8.GetBytes(value.ToString()))).Replace("-", "")
+                .ToLower();
         }
     }
 
@@ -604,6 +684,7 @@ public static class staticContext
         {
             return new DateTime((long)value.AsDouble);
         }
+
         throw new Exception($"`{value}` 无法解析为日期");
     }
 
