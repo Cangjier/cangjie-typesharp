@@ -22,4 +22,9 @@ public class Object
         }
         return result;
     }
+
+    public static void deleteKey(Json value, string key)
+    {
+        value.Remove(key);
+    }
 }
