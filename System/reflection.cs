@@ -1,4 +1,7 @@
-﻿using System.Reflection;
+﻿using System.Collections.Concurrent;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Runtime.Loader;
 using System.Text.RegularExpressions;
 using Cangjie.TypeSharp.FullNameScript;
 using TidyHPC.LiteJson;
@@ -24,6 +27,7 @@ public static class reflection
                 return type;
             }
         }
+
         return null;
     }
 
@@ -45,12 +49,14 @@ public static class reflection
                 {
                     continue;
                 }
+
                 if (regex.IsMatch(type.FullName))
                 {
                     types.Add(type);
                 }
             }
         }
+
         return types.ToArray();
     }
 
@@ -71,6 +77,7 @@ public static class reflection
                 types.Add(i.GetGenericArguments()[0]);
             }
         }
+
         return types.ToArray();
     }
 
@@ -80,7 +87,7 @@ public static class reflection
         return type.GetMethod("op_Implicit", [typeof(Json)]) != null;
     }
 
-    public static AssemblyName[] getReferencedAssemblies(Assembly assembly,int deepth=2)
+    public static AssemblyName[] getReferencedAssemblies(Assembly assembly, int deepth = 2)
     {
         void _getReferencedAssemblies(Assembly assembly, int deepth, List<AssemblyName> assemblyNames)
         {
@@ -88,6 +95,7 @@ public static class reflection
             {
                 return;
             }
+
             var references = assembly.GetReferencedAssemblies();
             foreach (var reference in references)
             {
@@ -95,17 +103,19 @@ public static class reflection
                 {
                     continue;
                 }
+
                 assemblyNames.Add(reference);
                 var refAssembly = Assembly.Load(reference);
                 _getReferencedAssemblies(refAssembly, deepth - 1, assemblyNames);
             }
         }
+
         List<AssemblyName> assemblyNames = [];
         _getReferencedAssemblies(assembly, deepth, assemblyNames);
         return assemblyNames.ToArray();
     }
 
-    public static void loadDependiencies(Assembly assembly,int depth)
+    public static void loadDependiencies(Assembly assembly, int depth)
     {
         var references = getReferencedAssemblies(assembly, depth);
         foreach (var reference in references)
@@ -117,5 +127,27 @@ public static class reflection
     public static void loadDependiencies(int depth)
     {
         loadDependiencies(Assembly.GetCallingAssembly(), depth);
+    }
+    
+    public static void registerNativeLoader(Func<string, string?> loader)
+    {
+        AssemblyLoadContext.Default.ResolvingUnmanagedDll += (assembly, libraryName) =>
+        {
+            var nativePath = loader(libraryName);
+            if (nativePath == null || string.IsNullOrWhiteSpace(nativePath) || !File.Exists(nativePath))
+            {
+                return IntPtr.Zero;
+            }
+            return NativeLibrary.Load(nativePath);
+        };
+    }
+
+    public static void loadNativeLibrary(string fullPath)
+    {
+        if (string.IsNullOrWhiteSpace(fullPath) || !File.Exists(fullPath))
+        {
+            return;
+        }
+        NativeLibrary.Load(fullPath);
     }
 }
