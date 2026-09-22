@@ -154,6 +154,32 @@ public class fileUtils
         }
     }
 
+    public static Dictionary<string,int> getFileCountByExtension(string path,string[] extensions, SearchOption searchOption = SearchOption.AllDirectories)
+    {
+        var allFiles = Directory.EnumerateFiles(path, "*", searchOption);
+        var result = new Dictionary<string, int>();
+        var extensionSet = new HashSet<string>(extensions);
+        foreach (var files in allFiles.Chunk(100))
+        {
+            foreach (var file in files)
+            {
+                var extension = Path.GetExtension(file);
+                if (extensionSet.Contains(extension))
+                {
+                    if(result.TryGetValue(extension, out var count))
+                    {
+                        result[extension] = count + 1;
+                    }
+                    else
+                    {
+                        result[extension] = 1;
+                    }
+                }
+            }
+        }
+        return result;
+    }
+    
     public static string? getTopContent(string path, int maxLength)
     {
         try
