@@ -104,6 +104,34 @@ public class fileUtils
         }
     }
 
+    public static string[] getFiles(string path, int pageNumber, int pageSize,
+        SearchOption searchOption = SearchOption.AllDirectories)
+    {
+        var files = Directory.EnumerateFiles(path, "*", searchOption);
+        return files.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToArray();
+    }
+
+    public static string[] getDirectories(string path, int pageNumber, int pageSize,
+        SearchOption searchOption = SearchOption.AllDirectories)
+    {
+        var directories = Directory.EnumerateDirectories(path, "*", searchOption);
+        return directories.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToArray();
+    }
+
+    public static string[] getFilesAndDirectories(string path, int pageNumber, int pageSize,
+        SearchOption searchOption = SearchOption.AllDirectories)
+    {
+        var filesAndDirectories = Directory.EnumerateFileSystemEntries(path, "*", searchOption);
+        return filesAndDirectories.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToArray();
+    }
+
+    public static string[] getFilesByExtensions(string path, string[] extensions, int pageNumber, int pageSize,
+        SearchOption searchOption = SearchOption.AllDirectories)
+    {
+        var files = Directory.EnumerateFiles(path, $"*{extensions.Join(",")}", searchOption);
+        return files.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToArray();
+    }
+
     public static int getDirectoriesCount(string path, SearchOption searchOption = SearchOption.AllDirectories)
     {
         try
@@ -154,7 +182,8 @@ public class fileUtils
         }
     }
 
-    public static Dictionary<string,int> getFileCountByExtension(string path,string[] extensions, SearchOption searchOption = SearchOption.AllDirectories)
+    public static Dictionary<string, int> getFileCountByExtension(string path, string[] extensions,
+        SearchOption searchOption = SearchOption.AllDirectories)
     {
         var allFiles = Directory.EnumerateFiles(path, "*", searchOption);
         var result = new Dictionary<string, int>();
@@ -166,7 +195,7 @@ public class fileUtils
                 var extension = Path.GetExtension(file);
                 if (extensionSet.Contains(extension))
                 {
-                    if(result.TryGetValue(extension, out var count))
+                    if (result.TryGetValue(extension, out var count))
                     {
                         result[extension] = count + 1;
                     }
@@ -177,9 +206,10 @@ public class fileUtils
                 }
             }
         }
+
         return result;
     }
-    
+
     public static string? getTopContent(string path, int maxLength)
     {
         try
@@ -212,34 +242,37 @@ public class fileUtils
 
     public static string? getRangeContent(string path, int startIndex, int endIndex)
     {
+        if (startIndex < 0 || endIndex < startIndex)
+            return string.Empty;
+
         try
         {
-            using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var streamReader = new StreamReader(fileStream, Util.UTF8);
-            StringBuilder content = new();
-            int currentIndex = 0;
-            while (!streamReader.EndOfStream)
+            using var reader = new StreamReader(path, Util.UTF8);
+
+            var sb = new StringBuilder();
+            var buffer = new char[4096];
+            int index = 0;
+            int read;
+
+            while ((read = reader.Read(buffer, 0, buffer.Length)) > 0)
             {
-                var line = streamReader.ReadLine();
-                if (line == null)
+                for (int i = 0; i < read; i++)
                 {
-                    break;
-                }
+                    if (index >= startIndex && index <= endIndex)
+                    {
+                        sb.Append(buffer[i]);
+                    }
 
-                currentIndex += line.Length;
-                if (currentIndex < startIndex)
-                {
-                    continue;
-                }
+                    index++;
 
-                content.AppendLine(line);
-                if (currentIndex > endIndex)
-                {
-                    return content.ToString();
+                    if (index > endIndex)
+                    {
+                        return sb.ToString();
+                    }
                 }
             }
 
-            return string.Empty;
+            return sb.ToString();
         }
         catch
         {
