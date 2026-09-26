@@ -102,4 +102,34 @@ public class Math
     {
         return SystemMath.Min(x.AsNumber, y.AsNumber);
     }
+    
+    public static bool isInteger(Json x)
+    {
+        return x.AsNumber % 1 == 0;
+    }
+
+    public static bool isFinite(Json x)
+    {
+        return !SystemMath.Abs(x.AsNumber).Equals(double.PositiveInfinity) && !SystemMath.Abs(x.AsNumber).Equals(double.NegativeInfinity) && !SystemMath.Abs(x.AsNumber).Equals(double.NaN);
+    }
+
+    public static bool isNaN(Json x)
+    {
+        return SystemMath.Abs(x.AsNumber).Equals(double.NaN);
+    }
+
+    public static bool isPositive(Json x)
+    {
+        return x.AsNumber > 0;
+    }
+
+    public static bool isNegative(Json x)
+    {
+        return x.AsNumber < 0;
+    }
+
+    public static bool isSafeInteger(Json x)
+    {
+        return isInteger(x) && isFinite(x);
+    }
 }

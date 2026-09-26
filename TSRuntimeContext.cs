@@ -235,5 +235,13 @@ public class TSRuntimeContext : RuntimeContext<char>
         context.MountVariableSpace(GetMountedVariableSpace);
         return context;
     }
+    
+    public override void SetExceptionCause(Exception exception, string? cause)
+    {
+        if (exception is Error error)
+        {
+            error.cause = cause;
+        }
+    }
 }
 
